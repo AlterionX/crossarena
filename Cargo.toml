@@ -1,0 +1,17 @@
+[package]
+name = "crossarena"
+version = "0.1.0"
+authors = ["AlterionX <ben.xu.cs@gmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+gdnative = { git = "https://github.com/GodotNativeTools/godot-rust", rev = "d483405fb41af0fb722cb0cdcee2e96470e1a046" }
+chrono = "0.4.9"
+mint = "0.5.3"
+nalgebra = { version = "0.19.0", features = ["mint"] }
+fern = { version = "0.5.9", features = ["colored"] }
+log = "0.4.8"
+euclid = { version = "0.20.1", features = ["mint"] }
