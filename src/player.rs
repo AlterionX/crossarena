@@ -1,114 +1,51 @@
 use nalgebra as na;
 use gdnative::{
     self as godot,
-    GodotString,
     InputEvent,
     InputEventMouseButton,
     InputEventMouseMotion,
     InputEventKey,
-    init::{Property, PropertyHint, PropertyUsage}
+    KinematicBody2D,
 };
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use crate::{
     direction::Direction,
-    inventory::Inventory,
     conv,
+    player::{
+        aim::{System as AimSys, Cfg as AimCfg},
+        dash::{System as DashSys, Cfg as DashCfg},
+        melee::{System as MeleeSys, Cfg as MeleeCfg},
+    },
+    health::{System as HealthSys, Cfg as HealthCfg},
+    inventory::Inventory,
+    systems::EditorCfg,
 };
 
-#[derive(Debug)]
-struct DashCfg {
-    duration: Duration,
-    cooldown: Duration,
-    slowdown: f64,
-    speed: f64,
-    chain: u8,
-}
-
-impl DashCfg {
-    const SPEED: f64 = 1000.;
-    const CHAIN: u8 = 3;
-    const DURATION: Duration = Duration::from_millis(200);
-    const COOLDOWN: Duration = Duration::from_millis(50);
-    const SLOWDOWN: f64 = 0.5;
-}
-
-impl Default for DashCfg {
-    fn default() -> Self {
-        Self {
-            duration: Self::DURATION,
-            cooldown: Self::COOLDOWN,
-            slowdown: Self::SLOWDOWN,
-            speed: Self::SPEED,
-            chain: Self::CHAIN,
-        }
-    }
-}
-
-struct DashData {
-    count: u8,
-    since_start: Duration,
-    dir: Direction,
-}
-
-impl DashData {
-    fn first_dash(d: Direction) -> Self {
-        Self {
-            count: 0,
-            since_start: Duration::from_secs(0),
-            dir: d,
-        }
-    }
-    fn chained_dash(&self, d: Direction) -> Self {
-        Self {
-            count: self.count + 1,
-            since_start: Duration::from_secs(0),
-            dir: d,
-        }
-    }
-}
-
-struct AimCfg {
-    max_aim_time: Duration,
-    min_aim_time: Duration,
-}
-
-impl AimCfg {
-    const MAX_AIM: Duration = Duration::from_millis(300);
-    const MIN_AIM: Duration = Duration::from_millis(100);
-}
-
-impl Default for AimCfg {
-    fn default() -> Self {
-        Self {
-            max_aim_time: Self::MAX_AIM,
-            min_aim_time: Self::MIN_AIM,
-        }
-    }
-}
+mod dash;
+mod aim;
+mod melee;
 
 pub struct Player {
     // Basic movement
     facing_dir: Direction,
-    aiming_loc: Option<godot::Vector2>,
     base_speed: f64,
     accel_time: f64,
     remaining_accel: f64,
+    melee_radius: f64,
 
-    // Dashing
-    dash: DashCfg,
-    dashing: Option<DashData>,
-
-    // Aiming
-    aim: AimCfg,
-    aiming: Option<Instant>,
+    dash: DashSys,
+    aim: AimSys,
+    melee: MeleeSys,
+    health: HealthSys,
 
     // inventory
     inventory: Inventory,
 }
 
 impl Player {
-    const DEFAULT_BASE_SPEED: f64 = 250.;
+    const DEFAULT_BASE_SPEED: f64 = 140.;
     const DEFAULT_ACCEL_TIME: f64 = 1.;
+    const MELEE_RADIUS: f64 = 30.;
 }
 
 impl Default for Player {
@@ -116,18 +53,15 @@ impl Default for Player {
         Self {
             // Basic movement
             facing_dir: Default::default(),
-            aiming_loc: Default::default(),
             base_speed: Self::DEFAULT_BASE_SPEED,
             accel_time: Self::DEFAULT_ACCEL_TIME,
             remaining_accel: Self::DEFAULT_ACCEL_TIME,
+            melee_radius: Self::MELEE_RADIUS,
 
-            // Dashing
             dash: Default::default(),
-            dashing: Default::default(),
-
-            // Aiming
             aim: Default::default(),
-            aiming: Default::default(),
+            melee: Default::default(),
+            health: Default::default(),
 
             // Inventory
             inventory: Default::default(),
@@ -148,45 +82,15 @@ impl godot::NativeClass for Player {
     }
 
     fn register_properties(builder: &godot::init::ClassBuilder<Self>) {
-        builder.add_property(Property {
-            name: "base/dash_speed",
-            default: 0.05,
-            hint: PropertyHint::Range {
-                range: 0.05..1.0,
-                step: 0.01,
-                slider: true,
-            },
-            getter: |this: &Player| this.dash.speed,
-            setter: |this: &mut Player, v| this.dash.speed = v,
-            usage: PropertyUsage::DEFAULT,
-        });
-
-        builder.add_property(Property {
-            name: "test/test_enum",
-            default: GodotString::from_str("Hello"),
-            hint: PropertyHint::Enum {
-                values: &["Hello", "World", "Testing"],
-            },
-            getter: |_: &Player| GodotString::from_str("Hello"),
-            setter: (),
-            usage: PropertyUsage::DEFAULT,
-        });
-
-        builder.add_property(Property {
-            name: "test/test_flags",
-            default: 0,
-            hint: PropertyHint::Flags {
-                values: &["A", "B", "C", "D"],
-            },
-            getter: |_: &Player| 0,
-            setter: (),
-            usage: PropertyUsage::DEFAULT,
-        });
+        DashCfg::register_properties(builder, |this| &this.dash.cfg, |this| &mut this.dash.cfg);
+        AimCfg::register_properties(builder, |this| &this.aim.cfg, |this| &mut this.aim.cfg);
+        MeleeCfg::register_properties(builder, |this| &this.melee.cfg, |this| &mut this.melee.cfg);
+        HealthCfg::register_properties(builder, |this| &this.health.cfg, |this| &mut this.health.cfg);
     }
 }
 
 impl Player {
-    fn handle_mouse_button(&mut self, event: InputEventMouseButton, owner: godot::KinematicBody2D) {
+    fn handle_mouse_button(&mut self, event: InputEventMouseButton, owner: KinematicBody2D) {
         const BUTTON_L: i64 = 1;
         const BUTTON_R: i64 = 2;
 
@@ -199,25 +103,53 @@ impl Player {
                 BUTTON_R => log::info!("Pressed R mouse button."),
                 _ => (),
             }
+            let own_pos = unsafe { owner.get_global_position() };
+            let mouse_pos = event.to_input_event_mouse().get_global_position();
+            let dist_from_sprite = (own_pos - mouse_pos).length() as f64;
             match button {
-                BUTTON_L => (), // attack
-                BUTTON_R => if let Some(dashing) = &mut self.dashing {
-                    // Already dashing, so change direction and advance dash count.
-                    if dashing.count < self.dash.chain {
-                        self.dashing = Some(dashing.chained_dash(self.facing_dir));
-                    } else {
-                        dashing.count = self.dash.chain;
-                        dashing.since_start = Duration::from_secs(0);
-                    }
+                // Attacks
+                BUTTON_L => if self.dash.is_dashing() {
+                    // Do nothing
+                } else if dist_from_sprite > self.melee_radius {
+                    self.melee.reset();
+                    self.aim.aim_at(conv::g_to_na64(mouse_pos))
                 } else {
-                    // Not yet dashing. Begin to dash.
-                    self.dashing = Some(DashData::first_dash(self.facing_dir));
+                    self.melee.attack(unsafe { owner.to_node_2d() }, self.facing_dir);
+                },
+                // Dashing
+                // Overrides any other action.
+                BUTTON_R => {
+                    // TODO reset any other state.
+                    self.aim.reset();
+                    self.melee.reset();
+                    self.health.set_invincibility(self.dash.invincibility());
+                    self.dash.dash(self.facing_dir);
+                },
+                _ => (),
+            }
+        } else { // released
+            match button {
+                BUTTON_L => log::info!("Released L mouse button."),
+                BUTTON_R => log::info!("Released R mouse button."),
+                _ => (),
+            }
+            let own_pos = conv::g_to_na64(unsafe { owner.get_global_position() });
+            match button {
+                // Begin aiming
+                BUTTON_L => if self.dash.is_dashing() {
+                    // Do nothing
+                } else if self.aim.is_aiming() {
+                    self.aim.attack(own_pos, unsafe { owner.to_node() }, self.calc_projectile_dmg());
                 },
                 _ => (),
             }
         }
     }
     fn handle_mouse_motion(&mut self, event: InputEventMouseMotion) {
+        if self.aim.is_aiming() {
+            let mouse_pos = conv::g_to_na64(event.to_input_event_mouse().get_global_position());
+            self.aim.aim_at(mouse_pos);
+        }
     }
     fn handle_key(&mut self, event: InputEventKey) {
         const KEY_A: i64 = b'A' as i64;
@@ -233,8 +165,8 @@ impl Player {
         let scancode = event.get_scancode();
 
         match scancode {
-            KEY_0..=KEY_9 | KEY_A..=KEY_Z => log::info!("Alphanumeric key pressed: {:?}", scancode as u8 as char),
-            _ => log::info!("Key with scancode {:?} pressed.", scancode),
+            KEY_0..=KEY_9 | KEY_A..=KEY_Z => log::trace!("Alphanumeric key pressed: {:?}", scancode as u8 as char),
+            _ => log::trace!("Key with scancode {:?} pressed.", scancode),
         }
 
         self.facing_dir = match (scancode, event.is_pressed()) {
@@ -254,39 +186,43 @@ impl Player {
         }
     }
 
+    fn calc_projectile_dmg(&self) -> f64 {
+        self.aim.calc_dmg()
+    }
     fn calc_vel(&mut self, delta: Duration) -> na::Vector2<f64> {
         // TODO Change `to_na_vec` to `into` when able to.
         // TODO Add an "acceleration" time.
-        if let Some(dashing) = &mut self.dashing {
-            dashing.since_start += delta;
-            if self.dash.chain <= dashing.count || dashing.since_start > self.dash.duration {
-                if dashing.since_start > self.dash.duration + self.dash.cooldown {
-                    self.dashing = None;
-                }
-                self.facing_dir.to_na_vec() * self.base_speed * self.dash.slowdown
-            } else {
-                dashing.dir.to_na_vec() * self.dash.speed
-            }
-        } else {
-            self.facing_dir.to_na_vec() * self.base_speed
-        }
+        self.dash.calc_vel(delta)
+            .or_else(|| self.aim.calc_vel(self.facing_dir))
+            .or_else(|| self.melee.calc_vel(self.facing_dir))
+            .unwrap_or_else(|| self.facing_dir.to_na_vec() * self.base_speed)
     }
 }
 
-#[godot::methods]
+#[methods]
 impl Player {
     fn _init() -> Self {
         Player::default()
     }
 
     #[export]
-    unsafe fn _ready(&mut self, mut owner: godot::KinematicBody2D) {
-        owner.set_physics_process(true);
+    unsafe fn _ready(&mut self, _owner: KinematicBody2D) {
+        self.aim.load_cache();
+        self.melee.load_cache();
+        self.health.init();
         log::info!("Hello from the player.");
     }
 
     #[export]
-    unsafe fn _physics_process(&mut self, mut owner: godot::KinematicBody2D, delta: f64) {
+    fn _process(&mut self, _owner: KinematicBody2D, delta: f64) {
+        let delta = Duration::from_secs_f64(delta);
+        self.melee.process(delta);
+        self.health.process(delta);
+        self.aim.narrow_aim(delta);
+    }
+
+    #[export]
+    unsafe fn _physics_process(&mut self, mut owner: KinematicBody2D, delta: f64) {
         let delta = Duration::from_secs_f64(delta);
         owner.move_and_slide(
             conv::na64_to_g(-self.calc_vel(delta)),
@@ -299,7 +235,7 @@ impl Player {
     }
 
     #[export]
-    unsafe fn _input(&mut self, owner: godot::KinematicBody2D, event: Option<InputEvent>) {
+    unsafe fn _input(&mut self, owner: KinematicBody2D, event: Option<InputEvent>) {
         if let Some(mouse_motion_event) = event.as_ref().and_then(|e| e.cast()) {
             self.handle_mouse_motion(mouse_motion_event);
         } else if let Some(key_event) = event.as_ref().and_then(|e| e.cast()) {
@@ -308,39 +244,11 @@ impl Player {
             self.handle_mouse_button(mouse_button_event, owner);
         }
     }
-}
-
-#[derive(godot::NativeClass)]
-#[inherit(godot::KinematicBody2D)]
-pub struct Projectile {
-    dir: godot::Vector2,
-    bounces: u8,
-}
-
-#[gdnative::methods]
-impl Projectile {
-    fn _init(_owner: gdnative::KinematicBody2D) -> Self {
-        Projectile {
-            dir: godot::Vector2::new(0., 0.),
-            bounces: 0,
-        }
-    }
 
     #[export]
-    fn _ready(&self, _owner: gdnative::KinematicBody2D) {
-        godot_print!("hello, world.")
-    }
-
-    #[export]
-    fn initialize_pos_and_dir(
-        &mut self,
-        mut owner: gdnative::KinematicBody2D,
-        pos: godot::Vector2,
-        dir: godot::Vector2,
-        bounces: u8,
-    ) {
-        unsafe { owner.set_position(pos); }
-        self.dir = dir;
-        self.bounces = bounces;
+    fn emit_init_signals(&self, owner: KinematicBody2D) {
+        let mut owner = unsafe { owner.to_object() };
+        self.health.broadcast_max_hp(&mut owner);
+        self.health.broadcast_hp(&mut owner);
     }
 }

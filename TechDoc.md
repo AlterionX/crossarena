@@ -77,17 +77,18 @@ out.
 
 - [x] Simple arena
 - [x] Simple player
-- [ ] WASD movement
-- [ ] Dashing
+- [x] WASD movement
+- [x] Dashing
 - [ ] Enemy data
-- [ ] General health management
-- [ ] Enemy spawn
-- [ ] Health UI
-- [ ] Attack scenes (aka hitbox frames) + naming scheme
+- [x] General health management
+- [x] Enemy spawn
+- [x] Health UI
+- [x] Attack scenes (aka hitbox frames) + naming scheme
 - [ ] Small melee combo
-- [ ] Projectiles
+- [x] Projectiles
 - [ ] Indicators for when charged shot is ready
 - [ ] Charged projectiles (ricochet)
+- [x] Damage
 
 Along with the more "stretch" goals.
 

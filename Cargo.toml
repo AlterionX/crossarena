@@ -8,10 +8,15 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-gdnative = { git = "https://github.com/GodotNativeTools/godot-rust", rev = "d483405fb41af0fb722cb0cdcee2e96470e1a046" }
+gdnative = { git = "https://github.com/GodotNativeTools/godot-rust", rev = "e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8" }
 chrono = "0.4.9"
 mint = "0.5.3"
 nalgebra = { version = "0.19.0", features = ["mint"] }
 fern = { version = "0.5.9", features = ["colored"] }
 log = "0.4.8"
-euclid = { version = "0.20.1", features = ["mint"] }
+euclid = { version = "0.20.3", features = ["mint"] }
+rand = "0.7.2"
+serde = "1.0.102"
+json = { package = "serde_json", version = "1.0.41" }
+lazy_static = "*"
+tap = "*"

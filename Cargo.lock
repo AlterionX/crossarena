@@ -16,7 +16,7 @@ dependencies = [
  "approx 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libm 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-complex 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -24,7 +24,7 @@ name = "approx"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -102,7 +102,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -141,10 +141,15 @@ dependencies = [
  "chrono 0.4.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "euclid 0.20.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fern 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)",
- "gdnative 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
+ "gdnative 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
+ "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "mint 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "nalgebra 0.19.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tap 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -153,7 +158,7 @@ version = "0.20.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "mint 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -169,34 +174,34 @@ dependencies = [
 [[package]]
 name = "gdnative"
 version = "0.5.0"
-source = "git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046#d483405fb41af0fb722cb0cdcee2e96470e1a046"
+source = "git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8#e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
 dependencies = [
- "gdnative-bindings 0.1.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
- "gdnative-core 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
- "gdnative-derive 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
+ "gdnative-bindings 0.1.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
+ "gdnative-core 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
+ "gdnative-derive 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
 ]
 
 [[package]]
 name = "gdnative-bindings"
 version = "0.1.0"
-source = "git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046#d483405fb41af0fb722cb0cdcee2e96470e1a046"
+source = "git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8#e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "gdnative-core 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
- "gdnative-sys 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
- "gdnative_bindings_generator 0.2.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
+ "gdnative-core 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
+ "gdnative-sys 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
+ "gdnative_bindings_generator 0.2.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
  "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "gdnative-core"
 version = "0.5.0"
-source = "git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046#d483405fb41af0fb722cb0cdcee2e96470e1a046"
+source = "git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8#e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "euclid 0.20.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "gdnative-sys 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
- "gdnative_bindings_generator 0.2.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)",
+ "gdnative-sys 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
+ "gdnative_bindings_generator 0.2.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)",
  "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -204,7 +209,7 @@ dependencies = [
 [[package]]
 name = "gdnative-derive"
 version = "0.5.0"
-source = "git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046#d483405fb41af0fb722cb0cdcee2e96470e1a046"
+source = "git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8#e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -214,7 +219,7 @@ dependencies = [
 [[package]]
 name = "gdnative-sys"
 version = "0.5.0"
-source = "git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046#d483405fb41af0fb722cb0cdcee2e96470e1a046"
+source = "git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8#e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
 dependencies = [
  "bindgen 0.51.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.65 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -225,7 +230,7 @@ dependencies = [
 [[package]]
 name = "gdnative_bindings_generator"
 version = "0.2.0"
-source = "git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046#d483405fb41af0fb722cb0cdcee2e96470e1a046"
+source = "git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8#e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
 dependencies = [
  "heck 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -344,7 +349,7 @@ dependencies = [
  "mint 0.5.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-complex 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-rational 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand_distr 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -365,7 +370,7 @@ version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -374,7 +379,7 @@ version = "0.1.41"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -384,12 +389,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "num-traits"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "autocfg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -607,6 +612,11 @@ dependencies = [
 ]
 
 [[package]]
+name = "tap"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
 name = "thread_local"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -687,12 +697,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum colored 1.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "433e7ac7d511768127ed85b0c4947f47a254131e37864b2dc13f52aa32cd37e5"
 "checksum euclid 0.20.3 (registry+https://github.com/rust-lang/crates.io-index)" = "f46a3516f04c5e05870f71ae6242a97e8f72ee12cfc2f7f5deb16111a98b0670"
 "checksum fern 0.5.9 (registry+https://github.com/rust-lang/crates.io-index)" = "e69ab0d5aca163e388c3a49d284fed6c3d0810700e77c5ae2756a50ec1a4daaa"
-"checksum gdnative 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)" = "<none>"
-"checksum gdnative-bindings 0.1.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)" = "<none>"
-"checksum gdnative-core 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)" = "<none>"
-"checksum gdnative-derive 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)" = "<none>"
-"checksum gdnative-sys 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)" = "<none>"
-"checksum gdnative_bindings_generator 0.2.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=d483405fb41af0fb722cb0cdcee2e96470e1a046)" = "<none>"
+"checksum gdnative 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)" = "<none>"
+"checksum gdnative-bindings 0.1.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)" = "<none>"
+"checksum gdnative-core 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)" = "<none>"
+"checksum gdnative-derive 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)" = "<none>"
+"checksum gdnative-sys 0.5.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)" = "<none>"
+"checksum gdnative_bindings_generator 0.2.0 (git+https://github.com/GodotNativeTools/godot-rust?rev=e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8)" = "<none>"
 "checksum generic-array 0.13.2 (registry+https://github.com/rust-lang/crates.io-index)" = "0ed1e761351b56f54eb9dcd0cfaca9fd0daecf93918e1cfc01c8a3d26ee7adcd"
 "checksum getrandom 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "e7db7ca94ed4cd01190ceee0d8a8052f08a247aa1b469a7f68c6a3b71afcf407"
 "checksum glob 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "9b919933a397b79c37e33b77bb2aa3dc8eb6e165ad809e58ff75bc7db2e34574"
@@ -713,7 +723,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum num-complex 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "fcb0cf31fb3ff77e6d2a6ebd6800df7fdcd106f2ad89113c9130bcd07f93dffc"
 "checksum num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)" = "b85e541ef8255f6cf42bbfe4ef361305c6c135d10919ecc26126c4e5ae94bc09"
 "checksum num-rational 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "f2885278d5fe2adc2f75ced642d52d879bffaceb5a2e0b1d4309ffdfb239b454"
-"checksum num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "6ba9a427cfca2be13aa6f6403b0b7e7368fe982bfa16fccc450ce74c46cd9b32"
+"checksum num-traits 0.2.9 (registry+https://github.com/rust-lang/crates.io-index)" = "443c53b3c3531dfcbfa499d8893944db78474ad7a1d87fa2d94d1a2231693ac6"
 "checksum parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f842b1982eb6c2fe34036a4fbfb06dd185a3f5c8edfaacdf7d1ea10b07de6252"
 "checksum parking_lot_core 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "b876b1b9e7ac6e1a74a6da34d25c42e17e8862aa409cbbbdcfc8d86c6f3bc62b"
 "checksum peeking_take_while 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "19b17cddbe7ec3f8bc800887bab5e717348c95ea2ca0b1bf0837fb964dc67099"
@@ -741,6 +751,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum shlex 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "7fdf1b9db47230893d76faad238fd6097fd6d6a9245cd7a4d90dbd639536bbd2"
 "checksum smallvec 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)" = "f7b0758c52e15a8b5e3691eae6cc559f08eee9406e548a4477ba4e67770a82b6"
 "checksum syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)" = "661641ea2aa15845cddeb97dad000d22070bb5c1fb456b96c1cba883ec691e92"
+"checksum tap 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "8dd9f05986b21b281a08e4b1a1f0e9c1c1675ede56e0e5d9af47eecc0522c420"
 "checksum thread_local 0.3.6 (registry+https://github.com/rust-lang/crates.io-index)" = "c6b53e329000edc2b34dbe8545fd20e55a333362d0a321909685a19bd28c3f1b"
 "checksum time 0.1.42 (registry+https://github.com/rust-lang/crates.io-index)" = "db8dcfca086c1143c9270ac42a2bbd8a7ee477b78ac8e45b19abfb0cbede4b6f"
 "checksum typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6d2783fe2d6b8c1101136184eb41be8b1ad379e4657050b8aaff0c79ee7575f9"

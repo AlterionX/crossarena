@@ -92,6 +92,17 @@ impl Direction {
             Right | UpRight | DownRight => *self,
         }
     }
+
+    pub fn pick_random(&self) -> Self {
+        use rand::seq::SliceRandom;
+        use Direction::*;
+        const DIRECTIONS: [Direction; 9] = [Up, Right, Down, Left, UpLeft, UpRight, DownLeft, DownRight, Neutral];
+        if let Some(d) = DIRECTIONS.choose(&mut rand::thread_rng()) {
+            *d
+        } else {
+            Neutral
+        }
+    }
 }
 
 impl From<Direction> for mint::Vector2<f64> {
