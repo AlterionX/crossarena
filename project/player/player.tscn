@@ -1,0 +1,74 @@
+[gd_scene load_steps=8 format=2]
+
+[ext_resource path="res://player/player.gdns" type="Script" id=1]
+[ext_resource path="res://player/collision_shape.tres" type="Shape2D" id=2]
+
+[sub_resource type="Gradient" id=1]
+offsets = PoolRealArray( 0, 0.0598802, 0.0718563 )
+colors = PoolColorArray( 0, 0, 0, 1, 0.413174, 0.413174, 0.413174, 1, 1, 1, 1, 1 )
+
+[sub_resource type="GradientTexture" id=2]
+gradient = SubResource( 1 )
+width = 5
+
+[sub_resource type="CapsuleShape2D" id=3]
+
+[sub_resource type="CapsuleShape2D" id=4]
+
+[sub_resource type="CapsuleShape2D" id=5]
+
+[node name="Player" type="KinematicBody2D"]
+script = ExtResource( 1 )
+aim/projectile_scene = "res://projectile/projectile.tscn"
+
+[node name="TextureRect" type="TextureRect" parent="."]
+margin_left = -10.0
+margin_top = -10.0
+margin_right = 10.0
+margin_bottom = 10.0
+texture = SubResource( 2 )
+expand = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = ExtResource( 2 )
+
+[node name="Melee" type="Node" parent="."]
+editor/display_folded = true
+
+[node name="0" type="Area2D" parent="Melee"]
+editor/display_folded = true
+visible = false
+
+[node name="Area0" type="CollisionShape2D" parent="Melee/0"]
+position = Vector2( 24, 0 )
+shape = SubResource( 3 )
+
+[node name="1" type="Area2D" parent="Melee"]
+editor/display_folded = true
+visible = false
+
+[node name="Area0" type="CollisionShape2D" parent="Melee/1"]
+position = Vector2( 24, 0 )
+scale = Vector2( 0.5, 0.5 )
+shape = SubResource( 4 )
+
+[node name="2" type="Area2D" parent="Melee"]
+editor/display_folded = true
+visible = false
+
+[node name="Area0" type="CollisionShape2D" parent="Melee/2"]
+position = Vector2( 24, 0 )
+scale = Vector2( 1.5, 1.5 )
+shape = SubResource( 5 )
+
+[node name="Aim" type="Node" parent="."]
+
+[node name="AimBeam_R" type="TextureRect" parent="Aim"]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="AimBeam_L" type="TextureRect" parent="Aim"]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0

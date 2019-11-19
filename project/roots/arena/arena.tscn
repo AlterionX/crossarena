@@ -1,0 +1,237 @@
+[gd_scene load_steps=15 format=2]
+
+[ext_resource path="res://roots/arena/arena.gdns" type="Script" id=1]
+[ext_resource path="res://roots/arena/topbotwall.tres" type="Shape2D" id=2]
+[ext_resource path="res://roots/arena/sidewall.tres" type="Shape2D" id=3]
+[ext_resource path="res://player/player.tscn" type="PackedScene" id=4]
+[ext_resource path="res://roots/arena/HUD.gdns" type="Script" id=5]
+
+[sub_resource type="OpenSimplexNoise" id=1]
+seed = -5
+period = 2.0
+lacunarity = 3.26
+
+[sub_resource type="NoiseTexture" id=2]
+noise = SubResource( 1 )
+
+[sub_resource type="Gradient" id=3]
+colors = PoolColorArray( 0.741176, 0.521569, 0.329412, 1, 0.741176, 0.521569, 0.329412, 1 )
+
+[sub_resource type="GradientTexture" id=4]
+gradient = SubResource( 3 )
+
+[sub_resource type="RectangleShape2D" id=5]
+
+[sub_resource type="Gradient" id=6]
+offsets = PoolRealArray( 0.473054 )
+colors = PoolColorArray( 0, 0.0862745, 1, 1 )
+
+[sub_resource type="GradientTexture" id=7]
+gradient = SubResource( 6 )
+width = 10
+
+[sub_resource type="StyleBoxFlat" id=8]
+bg_color = Color( 1, 0, 0, 1 )
+
+[sub_resource type="StyleBoxFlat" id=9]
+bg_color = Color( 1, 0.435294, 0.435294, 1 )
+
+[node name="Arena" type="Node"]
+script = ExtResource( 1 )
+
+[node name="World" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Room" type="Node2D" parent="World"]
+editor/display_folded = true
+position = Vector2( 512, 300 )
+
+[node name="Walls" type="TextureRect" parent="World/Room"]
+margin_left = -512.0
+margin_top = -300.0
+margin_right = 512.0
+margin_bottom = 300.0
+texture = SubResource( 2 )
+expand = true
+
+[node name="Ground" type="TextureRect" parent="World/Room"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+margin_left = -492.0
+margin_top = -280.0
+margin_right = 492.0
+margin_bottom = 280.0
+texture = SubResource( 4 )
+expand = true
+
+[node name="Top" type="StaticBody2D" parent="World/Room"]
+editor/display_folded = true
+position = Vector2( 0, -290 )
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Room/Top"]
+shape = ExtResource( 2 )
+
+[node name="Bot" type="StaticBody2D" parent="World/Room"]
+editor/display_folded = true
+position = Vector2( 0, 290 )
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Room/Bot"]
+shape = ExtResource( 2 )
+
+[node name="Left" type="StaticBody2D" parent="World/Room"]
+editor/display_folded = true
+position = Vector2( -502, 0 )
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Room/Left"]
+shape = ExtResource( 3 )
+
+[node name="Right" type="StaticBody2D" parent="World/Room"]
+editor/display_folded = true
+position = Vector2( 502, 0 )
+collision_layer = 3
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Room/Right"]
+shape = ExtResource( 3 )
+
+[node name="Player" parent="World" instance=ExtResource( 4 )]
+position = Vector2( 512, 300 )
+aim/projectile_scene = "res://projectile/normal/projectile.tscn"
+
+[node name="Forge" type="Node2D" parent="World"]
+editor/display_folded = true
+visible = false
+position = Vector2( 100, 300 )
+
+[node name="StaticBody2D" type="StaticBody2D" parent="World/Forge"]
+editor/display_folded = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Forge/StaticBody2D"]
+shape = SubResource( 5 )
+
+[node name="TextureRect" type="TextureRect" parent="World/Forge"]
+margin_left = -10.0
+margin_top = -10.0
+margin_right = 10.0
+margin_bottom = 10.0
+texture = SubResource( 7 )
+expand = true
+stretch_mode = 1
+
+[node name="UI" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 1
+
+[node name="HUD" type="VBoxContainer" parent="UI"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 5 )
+arena = NodePath("../..")
+hp_bar = NodePath("Status/HP/HP")
+wave_display = NodePath("Status/Wave/Counter")
+
+[node name="Container" type="Control" parent="UI/HUD"]
+margin_right = 1024.0
+margin_bottom = 10.0
+rect_min_size = Vector2( 0, 10 )
+mouse_filter = 1
+
+[node name="Status" type="HBoxContainer" parent="UI/HUD"]
+margin_top = 14.0
+margin_right = 1024.0
+margin_bottom = 64.0
+alignment = 1
+
+[node name="Spacer0" type="MarginContainer" parent="UI/HUD/Status"]
+margin_right = 25.0
+margin_bottom = 50.0
+rect_min_size = Vector2( 25, 0 )
+mouse_filter = 1
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+
+[node name="HP" type="HBoxContainer" parent="UI/HUD/Status"]
+margin_left = 29.0
+margin_right = 454.0
+margin_bottom = 50.0
+rect_min_size = Vector2( 0, 50 )
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="Label" type="Label" parent="UI/HUD/Status/HP"]
+margin_top = 18.0
+margin_right = 22.0
+margin_bottom = 32.0
+mouse_filter = 1
+text = "HP:"
+
+[node name="HP" type="ProgressBar" parent="UI/HUD/Status/HP"]
+margin_left = 26.0
+margin_top = 15.0
+margin_right = 425.0
+margin_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 2
+rect_min_size = Vector2( 0, 20 )
+mouse_filter = 1
+size_flags_horizontal = 3
+size_flags_vertical = 4
+size_flags_stretch_ratio = 2.0
+custom_styles/fg = SubResource( 8 )
+custom_styles/bg = SubResource( 9 )
+value = 90.0
+
+[node name="Spacer1" type="MarginContainer" parent="UI/HUD/Status"]
+margin_left = 458.0
+margin_right = 883.0
+margin_bottom = 50.0
+mouse_filter = 1
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 4.0
+
+[node name="Wave" type="HBoxContainer" parent="UI/HUD/Status"]
+margin_left = 887.0
+margin_right = 993.0
+margin_bottom = 50.0
+size_flags_horizontal = 3
+alignment = 2
+
+[node name="Label" type="Label" parent="UI/HUD/Status/Wave"]
+margin_left = 36.0
+margin_top = 18.0
+margin_right = 75.0
+margin_bottom = 32.0
+mouse_filter = 1
+text = "Wave:"
+
+[node name="Counter" type="Label" parent="UI/HUD/Status/Wave"]
+margin_left = 79.0
+margin_top = 18.0
+margin_right = 106.0
+margin_bottom = 32.0
+mouse_filter = 1
+text = "###"
+
+[node name="Spacer2" type="MarginContainer" parent="UI/HUD/Status"]
+margin_left = 997.0
+margin_right = 1022.0
+margin_bottom = 50.0
+rect_min_size = Vector2( 25, 0 )
+mouse_filter = 1
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.1
+[connection signal="arena_ready" from="." to="World/Player" method="emit_init_signals"]
+[connection signal="wave_num_changed" from="." to="UI/HUD" method="set_wave_num"]
+[connection signal="hp" from="World/Player" to="UI/HUD" method="set_health"]
+[connection signal="max_hp" from="World/Player" to="UI/HUD" method="set_max_health"]
