@@ -116,7 +116,8 @@ impl Normal {
     }
 
     #[export]
-    fn _ready(&self, _owner: KinematicBody2D) {
+    fn _ready(&self, mut owner: KinematicBody2D) {
+        unsafe { owner.add_to_group("projectile".into(), false) };
         log::info!("Hello from projectile.")
     }
 
@@ -124,13 +125,8 @@ impl Normal {
         if let Some(target) = unsafe { target.cast::<Node>() } {
             log::info!("Projectile collided with {:?}.", unsafe { target.get_name() });
             let groups = unsafe { target.get_groups() };
-            if groups.contains(&(&GodotString::from("enemy")).into()) {
+            if groups.contains(&(&GodotString::from("enemy")).into()) || groups.contains(&(&GodotString::from("switch")).into()) {
                 HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
-            }
-            if groups.contains(&(&GodotString::from("switch")).into()) {
-                if let Some(target) = unsafe { target.cast() } {
-                    Switch::call_switch(target);
-                }
             }
         }
     }

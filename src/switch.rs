@@ -112,6 +112,11 @@ impl Switch {
                 .map(|mut node| node.call(self.cfg.method.new_ref(), &[]));
         }
     }
+
+    #[export]
+    fn damage(&self, owner: StaticBody2D, _dmg: f64) {
+        self.switch(owner);
+    }
 }
 
 impl Switch {

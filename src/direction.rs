@@ -1,6 +1,6 @@
 use nalgebra as na;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Direction {
     Up, Right, Down, Left,
     UpLeft, UpRight,
@@ -40,6 +40,21 @@ impl Direction {
         let mut v = nalgebra::Vector2::new(self.x() as f64, self.y() as f64);
         v.try_normalize_mut(1e-9);
         v
+    }
+    pub fn to_radians(&self) -> Option<f64> {
+        use Direction::*;
+        use std::f64::consts::PI;
+        match self {
+            Right => Some(0.),
+            UpRight => Some(PI / 4.),
+            Up => Some(PI / 2.),
+            UpLeft => Some(3. * PI / 4.),
+            Left => Some(PI),
+            DownLeft => Some(5. * PI / 4.),
+            Down => Some(3. * PI / 2.),
+            DownRight => Some(7. * PI / 4.),
+            Neutral => None,
+        }
     }
 }
 
@@ -108,6 +123,12 @@ impl Direction {
 impl From<Direction> for mint::Vector2<f64> {
     fn from(d: Direction) -> Self {
         d.to_na_vec().into()
+    }
+}
+
+impl From<Direction> for Option<f64> {
+    fn from(d: Direction) -> Self {
+        d.to_radians()
     }
 }
 

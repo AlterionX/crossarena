@@ -83,7 +83,8 @@ impl SimpleEnemy {
     }
 
     #[export]
-    fn _ready(&self, _owner: KinematicBody2D) {
+    fn _ready(&mut self, _owner: KinematicBody2D) {
+        self.health.init();
         log::info!("An enemy has spawned!")
     }
 

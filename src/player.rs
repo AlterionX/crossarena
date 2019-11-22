@@ -206,10 +206,11 @@ impl Player {
     }
 
     #[export]
-    unsafe fn _ready(&mut self, _owner: KinematicBody2D) {
+    unsafe fn _ready(&mut self, mut owner: KinematicBody2D) {
         self.aim.load_cache();
         self.melee.load_cache();
         self.health.init();
+        owner.add_to_group("player".into(), false);
         log::info!("Hello from the player.");
     }
 
