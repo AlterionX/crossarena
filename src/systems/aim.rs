@@ -329,9 +329,10 @@ impl System {
             let offset = common_mats::rotation(rotation) * dir;
             let offset = offset.normalize() * self.cfg.fan_offset;
             unsafe {
-                fan.set_position(conv::na64_to_g(pos + offset));
+                // this is in global coords
+                fan.set_global_position(conv::na64_to_g(pos + offset));
                 fan.set_size(gdnative::Vector2::new(dir.norm() as f32, 1.));
-                fan.set_rotation((dir[1] / dir[0]).atan());
+                fan.set_rotation(offset[1].atan2(offset[0]));
             }
         } else {
             log::warn!("Fan {} is not a Control node.", unsafe { fan.get_name() }.to_string());
