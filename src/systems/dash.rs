@@ -7,7 +7,7 @@ use gdnative::{
 use std::time::Duration;
 use crate::{
     systems::{self, EditorCfg},
-    direction::Direction,
+    util::Direction,
 };
 
 #[derive(Debug)]

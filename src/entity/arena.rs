@@ -13,7 +13,7 @@ use gdnative::{
 };
 use std::sync::{Arc, Mutex};
 use tap::TapOptionOps;
-use crate::switch::Switch;
+use crate::entity::switch::Switch;
 
 mod spawn;
 use spawn::{Cfg as SpawnCfg, System as SpawnSystem};

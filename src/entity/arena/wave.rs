@@ -2,7 +2,7 @@ use nalgebra as na;
 use std::time::Instant;
 use gdnative::{Node, Node2D, PackedScene};
 
-use crate::{conv, arena::spawn::Cache};
+use crate::{util::conv, entity::arena::spawn::Cache};
 
 pub(super) struct Spawn {
     pos: na::Vector2<f64>,

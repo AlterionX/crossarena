@@ -1,21 +1,25 @@
 use gdnative::{
     Area2D,
-    CanvasItem,
     GodotString,
     NativeClass,
     Node,
-    init::{ClassBuilder, Property, PropertyHint, PropertyUsage},
+    init::{ClassBuilder, Property, PropertyHint},
     user_data::MutexData,
-    Object,
     StringArray,
     Variant,
 };
 use std::time::Duration;
 
 use crate::{
-    direction::Direction,
-    systems::{self, EditorCfg},
-    health::System as HealthSys,
+    util::{
+        Direction,
+        Group,
+    },
+    systems::{
+        self,
+        EditorCfg,
+        health::System as HealthSys,
+    },
 };
 
 #[derive(Debug)]
@@ -66,10 +70,18 @@ impl EditorCfg for Cfg {
         let get_mut = get_mut_proto.clone();
         builder.add_property(Property {
             name: "next_attack",
-            default: Self::NEXT_ATTACK,
-            hint: PropertyHint::None,
-            getter: move |this: &T| get(this).next_attack,
-            setter: move |this: &mut T, next_attack| get_mut(this).next_attack = next_attack,
+            default: -1,
+            hint: PropertyHint::Range {
+                range: (-1.)..(std::i32::MAX as f64),
+                step: 1.,
+                slider: false,
+            },
+            getter: move |this: &T| get(this).next_attack.map(|i| i as i64).unwrap_or(-1),
+            setter: move |this: &mut T, next_attack| get_mut(this).next_attack = if next_attack < 0 {
+                None
+            } else {
+                Some(next_attack as u64)
+            },
             usage: *systems::DEFAULT_USAGE,
         });
         let get = get_proto.clone();
@@ -123,7 +135,7 @@ impl EditorCfg for Cfg {
                 }
                 buf
             })(),
-            hint: PropertyHint::None,
+            hint: Group::full_property_hint(),
             getter: move |this: &T| {
                 let mut buf = StringArray::new();
                 for target in get(this).target.iter() {

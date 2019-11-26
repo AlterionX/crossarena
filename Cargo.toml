@@ -7,16 +7,36 @@ edition = "2018"
 [lib]
 crate-type = ["cdylib"]
 
-[dependencies]
-gdnative = { git = "https://github.com/GodotNativeTools/godot-rust", rev = "e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8" }
-chrono = "0.4.9"
-mint = "0.5.3"
-nalgebra = { version = "0.19.0", features = ["mint"] }
-fern = { version = "0.5.9", features = ["colored"] }
-log = "0.4.8"
-euclid = { version = "0.20.3", features = ["mint"] }
-rand = "0.7.2"
-serde = "1.0.102"
-json = { package = "serde_json", version = "1.0.41" }
-lazy_static = "*"
-tap = "*"
+[dependencies.gdnative]
+git = "https://github.com/GodotNativeTools/godot-rust"
+rev = "e95c7e6e8ec0cade723c6bda5dbb5c72b6fcb6a8"
+
+[dependencies.mint]
+version = "0.5.3"
+[dependencies.nalgebra]
+version = "0.19.0"
+features = ["mint"]
+[dependencies.euclid]
+version = "0.20.3"
+features = ["mint"]
+
+[dependencies.fern]
+version = "0.5.9"
+features = ["colored"]
+[dependencies.log]
+version = "0.4.8"
+
+[dependencies.serde]
+version = "1.0.102"
+[dependencies.json]
+package = "serde_json"
+version = "1.0.41"
+
+[dependencies.chrono]
+version = "0.4.9"
+[dependencies.rand]
+version = "0.7.2"
+[dependencies.lazy_static]
+version = "*"
+[dependencies.tap]
+version = "*"

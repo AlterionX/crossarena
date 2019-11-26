@@ -11,9 +11,8 @@ use gdnative::{
 use std::time::Duration;
 use tap::TapOptionOps;
 use crate::{
-    attack::Attack,
-    conv,
-    direction::Direction,
+    entity::MeleeAttack,
+    util::Direction,
     systems::{self, EditorCfg},
 };
 
@@ -89,10 +88,10 @@ struct AttackRef(Area2D);
 
 impl AttackRef {
     fn next_attack(&mut self) -> Option<u64> {
-        Attack::call_next_attack(&mut self.0)
+        MeleeAttack::call_next_attack(&mut self.0)
     }
     fn cooldown(&mut self) -> Option<Duration> {
-        Attack::call_cooldown(&mut self.0)
+        MeleeAttack::call_cooldown(&mut self.0)
     }
     fn data(&mut self) -> Option<AttackData> {
         // Gather everything at last.
@@ -102,7 +101,7 @@ impl AttackRef {
         })
     }
     fn execute(&mut self, dir: Direction) {
-        Attack::call_execute(self.0, dir)
+        MeleeAttack::call_execute(self.0, dir)
     }
 }
 

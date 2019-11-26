@@ -1,23 +1,14 @@
 #[macro_use]
 pub extern crate gdnative as godot;
 
-mod conv;
-mod direction;
-mod error;
-mod systems;
+mod entity;
+
 mod event_bus;
 
-mod health;
-mod player;
-mod enemy;
-
-mod switch;
-mod attack;
-mod projectile;
-mod inventory;
-mod arena;
-
 mod ui;
+
+mod util;
+mod systems;
 
 fn setup_logger() -> Result<(), log::SetLoggerError> {
     let log_level = log::LevelFilter::Info;
@@ -59,14 +50,14 @@ fn setup_logger() -> Result<(), log::SetLoggerError> {
 fn init(handle: gdnative::init::InitHandle) {
     setup_logger().expect("Logging setup.");
 
-    handle.add_class::<player::Player>();
-    handle.add_class::<projectile::Normal>();
-    handle.add_class::<attack::Attack>();
+    handle.add_class::<entity::Player>();
+    handle.add_class::<entity::NormalProjectile>();
+    handle.add_class::<entity::MeleeAttack>();
 
-    handle.add_class::<enemy::SimpleEnemy>();
+    handle.add_class::<entity::SimpleEnemy>();
 
-    handle.add_class::<arena::Arena>();
-    handle.add_class::<switch::Switch>();
+    handle.add_class::<entity::Arena>();
+    handle.add_class::<entity::Switch>();
 
     handle.add_class::<ui::HUD>();
 

@@ -10,10 +10,11 @@ use gdnative::{
 };
 use std::time::{Duration, Instant};
 use crate::{
-    direction::Direction,
-    inventory::Inventory,
-    conv,
-    systems::{self, EditorCfg},
+    util::{
+        Direction,
+        conv,
+    },
+    systems::{self, EditorCfg, inventory::Inventory},
 };
 
 #[derive(Debug)]

@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=2]
+[gd_scene load_steps=15 format=2]
 
 [ext_resource path="res://player/player.gdns" type="Script" id=1]
 [ext_resource path="res://player/collision_shape.tres" type="Shape2D" id=2]
@@ -29,9 +29,24 @@ height = 10.0
 radius = 15.0
 height = 30.0
 
+[sub_resource type="Gradient" id=8]
+offsets = PoolRealArray( 0, 1.38729e-43, 0.518219 )
+colors = PoolColorArray( 0, 0, 0, 1, 0.945098, 1, 0, 1, 0.975105, 1, 0.546559, 1 )
+
+[sub_resource type="GradientTexture" id=9]
+gradient = SubResource( 8 )
+
+[sub_resource type="Gradient" id=12]
+colors = PoolColorArray( 0, 0.858824, 1, 1, 1, 1, 1, 1 )
+
+[sub_resource type="GradientTexture" id=11]
+gradient = SubResource( 12 )
+
 [node name="Player" type="KinematicBody2D"]
 script = ExtResource( 1 )
 aim/projectile_scene = "res://projectile/projectile.tscn"
+aim/upper_fan = NodePath("Aim/AimBeam_R")
+aim/lower_fan = NodePath("Aim/AimBeam_L")
 
 [node name="TextureRect" type="TextureRect" parent="."]
 margin_left = -10.0
@@ -47,10 +62,12 @@ shape = ExtResource( 2 )
 [node name="Melee" type="Node2D" parent="."]
 
 [node name="0" type="Area2D" parent="Melee"]
+editor/display_folded = true
 visible = false
 collision_layer = 3
 collision_mask = 3
 script = ExtResource( 3 )
+next_attack = 1
 targets = PoolStringArray( "enemy", "switch" )
 
 [node name="TextureRect" type="TextureRect" parent="Melee/0"]
@@ -66,10 +83,12 @@ position = Vector2( 24, 0 )
 shape = SubResource( 5 )
 
 [node name="1" type="Area2D" parent="Melee"]
+editor/display_folded = true
 visible = false
 collision_layer = 3
 collision_mask = 3
 script = ExtResource( 3 )
+next_attack = 2
 targets = PoolStringArray( "enemy", "switch" )
 
 [node name="TextureRect" type="TextureRect" parent="Melee/1"]
@@ -85,6 +104,7 @@ position = Vector2( 24, 0 )
 shape = SubResource( 6 )
 
 [node name="2" type="Area2D" parent="Melee"]
+editor/display_folded = true
 visible = false
 collision_layer = 3
 collision_mask = 3
@@ -106,11 +126,15 @@ shape = SubResource( 7 )
 [node name="Aim" type="Node" parent="."]
 
 [node name="AimBeam_R" type="TextureRect" parent="Aim"]
-visible = false
-margin_right = 40.0
-margin_bottom = 40.0
+margin_right = 10.0
+margin_bottom = 10.0
+rect_min_size = Vector2( 10, 10 )
+texture = SubResource( 9 )
+expand = true
 
 [node name="AimBeam_L" type="TextureRect" parent="Aim"]
-visible = false
-margin_right = 40.0
-margin_bottom = 40.0
+margin_right = 10.0
+margin_bottom = 10.0
+rect_min_size = Vector2( 10, 10 )
+texture = SubResource( 11 )
+expand = true

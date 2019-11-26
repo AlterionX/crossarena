@@ -6,8 +6,10 @@ use gdnative::{
     user_data::MutexData,
 };
 use crate::{
-    health::{System as HealthSys, Cfg as HealthCfg},
-    systems::{self, EditorCfg},
+    systems::{
+        EditorCfg,
+        health::{System as HealthSys, Cfg as HealthCfg},
+    },
 };
 
 pub const ENEMY: &'static str = "enemy";
@@ -91,6 +93,10 @@ impl SimpleEnemy {
     #[export]
     fn _exit_tree(&mut self, _owner: KinematicBody2D) {
         log::info!("SimpleEnemy to be deleted.");
+    }
+
+    #[export]
+    fn _physics_process(&self, _owner: KinematicBody2D, _delta: f64) {
     }
 
     #[export]

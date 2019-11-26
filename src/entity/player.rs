@@ -9,21 +9,20 @@ use gdnative::{
 };
 use std::time::Duration;
 use crate::{
-    direction::Direction,
-    conv,
-    player::{
+    util::{
+        Direction,
+        Group,
+        conv,
+    },
+    systems::{
+        EditorCfg,
+        health::{System as HealthSys, Cfg as HealthCfg},
+        inventory::Inventory,
         aim::{System as AimSys, Cfg as AimCfg},
         dash::{System as DashSys, Cfg as DashCfg},
         melee::{System as MeleeSys, Cfg as MeleeCfg},
     },
-    health::{System as HealthSys, Cfg as HealthCfg},
-    inventory::Inventory,
-    systems::EditorCfg,
 };
-
-mod dash;
-mod aim;
-mod melee;
 
 pub struct Player {
     // Basic movement
@@ -112,7 +111,7 @@ impl Player {
                     // Do nothing
                 } else if dist_from_sprite > self.melee_radius {
                     self.melee.reset();
-                    self.aim.aim_at(conv::g_to_na64(mouse_pos))
+                    self.aim.aim_at(unsafe { owner.to_node() }, conv::g_to_na64(mouse_pos))
                 } else {
                     self.melee.attack(unsafe { owner.to_node_2d() }, self.facing_dir);
                 },
@@ -120,7 +119,7 @@ impl Player {
                 // Overrides any other action.
                 BUTTON_R => {
                     // TODO reset any other state.
-                    self.aim.reset();
+                    self.aim.reset(unsafe { owner.to_node() });
                     self.melee.reset();
                     self.health.set_invincibility(self.dash.invincibility());
                     self.dash.dash(self.facing_dir);
@@ -145,10 +144,10 @@ impl Player {
             }
         }
     }
-    fn handle_mouse_motion(&mut self, event: InputEventMouseMotion) {
+    fn handle_mouse_motion(&mut self, owner: KinematicBody2D, event: InputEventMouseMotion) {
         if self.aim.is_aiming() {
             let mouse_pos = conv::g_to_na64(event.to_input_event_mouse().get_global_position());
-            self.aim.aim_at(mouse_pos);
+            self.aim.aim_at(unsafe { owner.to_node() }, mouse_pos);
         }
     }
     fn handle_key(&mut self, event: InputEventKey) {
@@ -210,16 +209,16 @@ impl Player {
         self.aim.load_cache();
         self.melee.load_cache();
         self.health.init();
-        owner.add_to_group("player".into(), false);
+        Group::Player.add_node(unsafe { owner.to_node() });
         log::info!("Hello from the player.");
     }
 
     #[export]
-    fn _process(&mut self, _owner: KinematicBody2D, delta: f64) {
+    fn _process(&mut self, owner: KinematicBody2D, delta: f64) {
         let delta = Duration::from_secs_f64(delta);
         self.melee.process(delta);
         self.health.process(delta);
-        self.aim.narrow_aim(delta);
+        self.aim.narrow_aim(unsafe { owner.to_node() }, delta);
     }
 
     #[export]
@@ -238,7 +237,7 @@ impl Player {
     #[export]
     unsafe fn _input(&mut self, owner: KinematicBody2D, event: Option<InputEvent>) {
         if let Some(mouse_motion_event) = event.as_ref().and_then(|e| e.cast()) {
-            self.handle_mouse_motion(mouse_motion_event);
+            self.handle_mouse_motion(owner, mouse_motion_event);
         } else if let Some(key_event) = event.as_ref().and_then(|e| e.cast()) {
             self.handle_key(key_event);
         } else if let Some(mouse_button_event) = event.as_ref().and_then(|e| e.cast()) {

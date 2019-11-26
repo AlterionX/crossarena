@@ -12,10 +12,13 @@ use gdnative::{
 };
 use std::time::Duration;
 use crate::{
-    systems::{self, EditorCfg,},
-    switch::Switch,
-    health::System as HealthSys,
-    conv,
+    util::conv,
+    systems::{
+        self,
+        EditorCfg,
+        health::System as HealthSys,
+    },
+    entity::Switch,
 };
 
 pub struct Cfg {

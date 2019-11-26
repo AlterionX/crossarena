@@ -1,5 +1,13 @@
 use gdnative::{NativeClass, init::{ClassBuilder, PropertyUsage}, user_data::MutexData,};
 
+pub mod melee;
+pub mod aim;
+pub mod dash;
+
+pub mod health;
+
+pub mod inventory;
+
 lazy_static::lazy_static! {
     pub static ref DEFAULT_USAGE: PropertyUsage = PropertyUsage::SCRIPT_VARIABLE | PropertyUsage::STORAGE | PropertyUsage::EDITOR;
 }
@@ -17,4 +25,3 @@ pub trait EditorCfg {
             GM: Clone + Fn(&mut T) -> &mut Self,
     ;
 }
-

@@ -9,9 +9,11 @@ use gdnative::{
 use std::{fs::File, path::Path, io::{self, BufReader}, sync::{Arc, Mutex}};
 
 use crate::{
-    enemy::Cfg as EnemyCfg,
-    error::JsonIOError,
-    arena::wave::Wave,
+    entity::{
+        arena::wave::Wave,
+        enemy::Cfg as EnemyCfg
+    },
+    util::error::JsonIOError,
 };
 
 #[derive(Debug)]
