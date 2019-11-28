@@ -84,7 +84,7 @@ out.
 - [x] Enemy spawn
 - [x] Health UI
 - [x] Attack scenes (aka hitbox frames) + naming scheme
-- [ ] Small melee combo
+- [x] Small melee combo
 - [x] Projectiles
 - [ ] Indicators for when charged shot is ready
 - [ ] Charged projectiles (ricochet)

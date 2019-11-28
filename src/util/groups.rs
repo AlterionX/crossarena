@@ -2,32 +2,37 @@ use gdnative::{init::PropertyHint, GodotString, Node};
 
 const ENEMY: &'static str = "enemy";
 const PLAYER: &'static str = "player";
+const SWITCH: &'static str = "player";
 const PROJECTILE: &'static str = "projectile";
 
 const PLAYER_MASK: i64 = 1 << 0;
 const PROJECTILE_MASK: i64 = 1 << 2;
 const ENEMY_MASK: i64 = 1 << 1;
+const SWITCH_MASK: i64 = 1 << 3;
 
 lazy_static::lazy_static! {
     static ref ENEMY_GS: GodotString = ENEMY.into();
     static ref PLAYER_GS: GodotString = PLAYER.into();
     static ref PROJECTILE_GS: GodotString = PROJECTILE.into();
+    static ref SWITCH_GS: GodotString = SWITCH.into();
 }
 
 pub enum Group {
     Enemy,
     Player,
+    Switch,
     Projectile,
 }
 
 impl Group {
-    pub const ALL_GROUPS: &'static[Self] = &[Self::Player, Self::Enemy, Self::Projectile];
+    pub const ALL_GROUPS: &'static[Self] = &[Self::Player, Self::Enemy, Self::Projectile, Self::Switch];
 
     pub fn name(&self) -> &'static str {
         match self {
             Self::Enemy => ENEMY,
             Self::Player => PLAYER,
             Self::Projectile => PROJECTILE,
+            Self::Switch => &SWITCH,
         }
     }
 
@@ -36,6 +41,7 @@ impl Group {
             Self::Enemy => &ENEMY_GS,
             Self::Player => &PLAYER_GS,
             Self::Projectile => &PROJECTILE_GS,
+            Self::Switch => &SWITCH_GS,
         }
     }
 
@@ -44,6 +50,7 @@ impl Group {
             Self::Enemy => ENEMY_MASK,
             Self::Player => PLAYER_MASK,
             Self::Projectile => PROJECTILE_MASK,
+            Self::Switch => SWITCH_MASK,
         }
     }
 
@@ -57,6 +64,12 @@ impl Group {
                 self.godot_name().new_ref(),
                 false,
             )
+        }
+    }
+
+    pub fn has_node(&self, node: Node) -> bool {
+        unsafe {
+            node.is_in_group(self.godot_name().new_ref())
         }
     }
 

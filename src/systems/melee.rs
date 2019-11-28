@@ -1,19 +1,18 @@
 use nalgebra as na;
 use gdnative::{
-    Area2D,
     NativeClass,
     Node,
-    Node2D,
     init::{ClassBuilder, Property, PropertyHint,},
+    Instance,
     user_data::MutexData,
     NodePath,
 };
 use std::time::Duration;
-use tap::TapOptionOps;
+use tap::{TapResultOps, TapOptionOps};
 use crate::{
     entity::MeleeAttack,
     util::Direction,
-    systems::{self, EditorCfg},
+    systems::{self, System as SysTrait, EditorCfg},
 };
 
 pub struct Cfg {
@@ -62,52 +61,35 @@ impl EditorCfg for Cfg {
     }
 }
 
-struct Cache {
-    melee_combos: u64,
-}
+pub struct Cache {}
 
 impl Cache {
-    fn load_with(cfg: &Cfg) -> Option<Self> {
-        Some(Self {
-            melee_combos: 0,
-        })
+    fn load_with(_: &Cfg) -> Option<Self> {
+        Some(Self {})
     }
 
-    fn attack(&self, attack_id: u64, cfg: &Cfg, owner: Node) -> Option<AttackRef> {
-        Some(AttackRef(unsafe {
+    fn attack(&self, attack_id: u64, cfg: &Cfg, owner: Node) -> Option<Instance<MeleeAttack>> {
+        Instance::try_from_base(unsafe {
             owner
                 .get_node(cfg.frame_nodes_path.new_ref())?
                 .get_node(attack_id.to_string().into())?
                 .cast()?
-        }))
-    }
-}
-
-// TODO Implement a script for this for an actual node.
-struct AttackRef(Area2D);
-
-impl AttackRef {
-    fn next_attack(&mut self) -> Option<u64> {
-        MeleeAttack::call_next_attack(&mut self.0)
-    }
-    fn cooldown(&mut self) -> Option<Duration> {
-        MeleeAttack::call_cooldown(&mut self.0)
-    }
-    fn data(&mut self) -> Option<AttackData> {
-        // Gather everything at last.
-        Some(AttackData {
-            next_attack: self.next_attack(),
-            cooldown: self.cooldown()?,
         })
-    }
-    fn execute(&mut self, dir: Direction) {
-        MeleeAttack::call_execute(self.0, dir)
     }
 }
 
 struct AttackData {
     next_attack: Option<u64>,
     cooldown: Duration,
+}
+
+impl AttackData {
+    fn from_attack(atk: &MeleeAttack) -> Self {
+        Self {
+            next_attack: atk.next_attack(),
+            cooldown: atk.cooldown(),
+        }
+    }
 }
 
 pub struct Data {
@@ -127,8 +109,40 @@ impl System {
     pub fn load_cache(&mut self) {
         self.cache = Cache::load_with(&self.cfg);
     }
-    pub fn reset(&mut self) {
-        self.data = None;
+    pub fn reset(&mut self, owner: Node) {
+        let data = self.data.take();
+        let cache = match self.cache.as_ref() {
+            Some(cache) => cache,
+            None => {
+                log::warn!(
+                    "Could not find melee cache when attempting to reset melee systems of {}.",
+                    unsafe { owner.get_name() }.to_string(),
+                );
+                return;
+            }
+        };
+        let cfg = &self.cfg;
+
+        if let Some(data) = data {
+            let atk = match cache.attack(data.curr_attack, cfg, owner) {
+                Some(atk) => atk,
+                None => {
+                    log::warn!(
+                        "Could not find current attack {} in node {}. How did that happen?",
+                        unsafe { owner.get_name() }.to_string(),
+                        data.curr_attack,
+                    );
+                    return;
+                }
+            };
+            match atk.map_mut(|atk, base| atk.reset(base)) {
+                Ok(_) => (),
+                Err(_) => log::warn!(
+                    "Could not reset attack node when resetting melee system of {} node.!",
+                    unsafe { owner.get_name() }.to_string(),
+                )
+            }
+        }
     }
     pub fn calc_vel(&self, facing_dir: Direction) -> Option<na::Vector2<f64>> {
         self.data.as_ref().map(|_| (facing_dir.to_na_vec() * self.cfg.walk_speed))
@@ -144,52 +158,68 @@ impl System {
     pub fn is_attacking(&self) -> bool {
         self.data.is_some()
     }
-    pub fn attack(&mut self, owner: Node2D, dir: Direction) {
-        let owner = unsafe { owner.to_node() };
-        if self.is_attacking() {
-            (|| {
-                let frames_path = self.cfg.frame_nodes_path.new_ref();
-                let data = self.data.as_mut()
-                    .tap_none(|| log::warn!("Melee system is attacking but has no data."))?;
-                let cache = self.cache.as_ref()
-                    .tap_none(|| log::warn!("Cache loading failed earlier."))?;
-                let mut attack = cache.attack(data.curr_attack, &self.cfg, owner)
-                    .tap_none(|| log::warn!("Could not locate target attack {:?} in melee attack node: {}.", data.curr_attack, frames_path.new_ref().to_string()))?;
-                let attack_data = attack.data()
-                    .tap_none(|| log::warn!("Could not access attack data of {:?} attack.", data.curr_attack))?;
-                // TODO Grab data from attack nodes.
-                if data.since_last > attack_data.cooldown {
-                    // Do nothing
-                } else {
-                    let next_attack_id = attack_data.next_attack.unwrap_or(self.cfg.initial_attack);
-                    let mut next_attack = cache.attack(next_attack_id, &self.cfg, owner)?;
-                    let attack_data = next_attack.data()
-                        .tap_none(|| log::warn!("Could not access attack data of {:?} attack.", next_attack_id))?;
-                    self.data = Some(Data {
-                        attack: attack_data,
-                        since_last: Duration::from_millis(0),
-                        curr_attack: next_attack_id,
-                    });
-                    next_attack.execute(dir);
-                }
-                Some(())
-            })();
+    pub fn attack(&mut self, owner: Node, dir: Direction) {
+        let atk_and_id = (|| if self.is_attacking() {
+            let (cfg, cache, data) = self.res_view()
+                .tap_err(|e| {
+                    log::warn!(
+                        "While node {} attempted to attack (melee) \
+                        encountered the following error:\n\t{}",
+                        unsafe { owner.get_name() }.to_string(),
+                        e,
+                    )
+                }).ok()?;
+            if data.since_last > data.attack.cooldown {
+                None
+            } else {
+                data.attack.next_attack.and_then(|next_attack_id| Some((
+                    next_attack_id,
+                    cache.attack(next_attack_id, cfg, owner)?
+                )))
+            }
         } else {
-            (|| {
-                let cache = self.cache.as_ref()
-                    .tap_none(|| log::warn!("Cache loading failed earlier."))?;
-                let mut initial_attack = cache.attack(self.cfg.initial_attack, &self.cfg, owner)?;
-                let attack_data = initial_attack.data()
-                    .tap_none(|| log::warn!("Could not access attack data of {:?} attack.", self.cfg.initial_attack))?;
-                // Create attack.
-                self.data = Some(Data {
-                    attack: attack_data,
-                    since_last: Duration::from_millis(0),
-                    curr_attack: self.cfg.initial_attack,
-                });
-                initial_attack.execute(dir);
-                Some(())
-            })();
+            let cache = self.cache
+                .as_ref()
+                .tap_none(|| {
+                    log::warn!(
+                        "While node {} attempted to attack (melee), could not locate cache.",
+                        unsafe { owner.get_name() }.to_string(),
+                    )
+                })?;
+            Some((self.cfg.initial_attack, cache.attack(self.cfg.initial_attack, &self.cfg, owner)?))
+        })();
+        let data = atk_and_id.and_then(|(id, atk)| {
+            self.reset(owner);
+            atk
+                .map_mut(|atk, base| {
+                    atk.execute(base, dir);
+                    Data {
+                        attack: AttackData::from_attack(atk),
+                        since_last: Duration::from_millis(0),
+                        curr_attack: id,
+                    }
+                })
+                .tap_err(|_| log::warn!(
+                    "Failed to excute attack in {} node.",
+                    unsafe { owner.get_name() }.to_string(),
+                ))
+                .ok()
+        });
+        if let Some(data) = data {
+            self.data = Some(data);
         }
+    }
+}
+
+impl SysTrait for System {
+    type Cfg = Cfg;
+    type Cache = Cache;
+    type Data = Data;
+
+    fn view(&self) -> (&Self::Cfg, Option<&Self::Cache>, Option<&Self::Data>) {
+        (&self.cfg, self.cache.as_ref(), self.data.as_ref())
+    }
+    fn view_mut(&mut self) -> (&mut Self::Cfg, Option<&mut Self::Cache>, Option<&mut Self::Data>) {
+        (&mut self.cfg, self.cache.as_mut(), self.data.as_mut())
     }
 }

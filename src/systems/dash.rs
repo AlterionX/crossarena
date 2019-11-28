@@ -6,7 +6,7 @@ use gdnative::{
 };
 use std::time::Duration;
 use crate::{
-    systems::{self, EditorCfg},
+    systems::{self, System as SysTrait, EditorCfg},
     util::Direction,
 };
 
@@ -142,6 +142,7 @@ impl Data {
 #[derive(Default)]
 pub struct System {
     pub cfg: Cfg,
+    cache: (),
     pub data: Option<Data>,
 }
 
@@ -181,5 +182,18 @@ impl System {
     }
     pub fn invincibility(&self) -> Duration {
         self.cfg.invincibility
+    }
+}
+
+impl SysTrait for System {
+    type Cfg = Cfg;
+    type Cache = ();
+    type Data = Data;
+
+    fn view(&self) -> (&Self::Cfg, Option<&Self::Cache>, Option<&Self::Data>) {
+        (&self.cfg, Some(&self.cache), self.data.as_ref())
+    }
+    fn view_mut(&mut self) -> (&mut Self::Cfg, Option<&mut Self::Cache>, Option<&mut Self::Data>) {
+        (&mut self.cfg, Some(&mut self.cache), self.data.as_mut())
     }
 }

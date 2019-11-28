@@ -1,8 +1,10 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://player/player.gdns" type="Script" id=1]
 [ext_resource path="res://player/collision_shape.tres" type="Shape2D" id=2]
 [ext_resource path="res://player/attack.gdns" type="Script" id=3]
+[ext_resource path="res://player/right_aim_beam_normal.tres" type="Texture" id=4]
+[ext_resource path="res://player/left_aim_beam_normal.tres" type="Texture" id=5]
 
 [sub_resource type="Gradient" id=1]
 colors = PoolColorArray( 0.607843, 0.207843, 0.207843, 1, 0.0784314, 0.611765, 0.286275, 1 )
@@ -13,39 +15,45 @@ width = 5
 
 [sub_resource type="Gradient" id=3]
 offsets = PoolRealArray( 1.38729e-43 )
-colors = PoolColorArray( 0, 0.0392157, 1, 1 )
+colors = PoolColorArray( 0, 1, 0.952941, 1 )
 
 [sub_resource type="GradientTexture" id=4]
 gradient = SubResource( 3 )
 
 [sub_resource type="CapsuleShape2D" id=5]
-
-[sub_resource type="CapsuleShape2D" id=6]
 radius = 5.0
 height = 10.0
 
-[sub_resource type="CapsuleShape2D" id=7]
+[sub_resource type="Gradient" id=6]
+offsets = PoolRealArray( 1.38729e-43 )
+colors = PoolColorArray( 0, 1, 0.227451, 1 )
+
+[sub_resource type="GradientTexture" id=7]
+gradient = SubResource( 6 )
+
+[sub_resource type="CapsuleShape2D" id=8]
 radius = 15.0
 height = 30.0
 
-[sub_resource type="Gradient" id=8]
-offsets = PoolRealArray( 0, 1.38729e-43, 0.518219 )
-colors = PoolColorArray( 0, 0, 0, 1, 0.945098, 1, 0, 1, 0.975105, 1, 0.546559, 1 )
+[sub_resource type="Gradient" id=9]
+offsets = PoolRealArray( 1.38729e-43 )
+colors = PoolColorArray( 0, 0.0862745, 1, 1 )
 
-[sub_resource type="GradientTexture" id=9]
-gradient = SubResource( 8 )
+[sub_resource type="GradientTexture" id=10]
+gradient = SubResource( 9 )
 
-[sub_resource type="Gradient" id=12]
-colors = PoolColorArray( 0, 0.858824, 1, 1, 1, 1, 1, 1 )
-
-[sub_resource type="GradientTexture" id=11]
-gradient = SubResource( 12 )
+[sub_resource type="CapsuleShape2D" id=11]
 
 [node name="Player" type="KinematicBody2D"]
 script = ExtResource( 1 )
-aim/projectile_scene = "res://projectile/projectile.tscn"
+aim/projectile_scene = "res://projectile/normal/projectile.tscn"
+aim/charged_projectile_scene = "res://projectile/charged/charged_projectile.tscn"
 aim/upper_fan = NodePath("Aim/AimBeam_R")
 aim/lower_fan = NodePath("Aim/AimBeam_L")
+aim/ufan_normal = "res://player/right_aim_beam_normal.tres"
+aim/lfan_normal = "res://player/left_aim_beam_normal.tres"
+aim/ufan_charged = "res://player/right_aim_beam_charged.tres"
+aim/lfan_Charged = "res://player/left_aim_beam_charged.tres"
 
 [node name="TextureRect" type="TextureRect" parent="."]
 margin_left = -10.0
@@ -60,29 +68,7 @@ shape = ExtResource( 2 )
 
 [node name="Melee" type="Node2D" parent="."]
 
-[node name="0" type="Area2D" parent="Melee"]
-editor/display_folded = true
-visible = false
-collision_layer = 3
-collision_mask = 3
-script = ExtResource( 3 )
-next_attack = 1
-targets = PoolStringArray( "enemy", "switch" )
-
-[node name="TextureRect" type="TextureRect" parent="Melee/0"]
-margin_left = 14.0
-margin_top = -20.0
-margin_right = 34.0
-margin_bottom = 20.0
-texture = SubResource( 4 )
-expand = true
-
-[node name="Area0" type="CollisionShape2D" parent="Melee/0"]
-position = Vector2( 24, 0 )
-shape = SubResource( 5 )
-
 [node name="1" type="Area2D" parent="Melee"]
-editor/display_folded = true
 visible = false
 collision_layer = 3
 collision_mask = 3
@@ -100,14 +86,14 @@ expand = true
 
 [node name="Area0" type="CollisionShape2D" parent="Melee/1"]
 position = Vector2( 24, 0 )
-shape = SubResource( 6 )
+shape = SubResource( 5 )
 
 [node name="2" type="Area2D" parent="Melee"]
-editor/display_folded = true
 visible = false
 collision_layer = 3
 collision_mask = 3
 script = ExtResource( 3 )
+cooldown = 2000
 targets = PoolStringArray( "enemy", "switch" )
 
 [node name="TextureRect" type="TextureRect" parent="Melee/2"]
@@ -115,12 +101,32 @@ margin_left = 15.0
 margin_top = -30.0
 margin_right = 45.0
 margin_bottom = 30.0
-texture = SubResource( 4 )
+texture = SubResource( 7 )
 expand = true
 
 [node name="Area0" type="CollisionShape2D" parent="Melee/2"]
 position = Vector2( 30, 0 )
-shape = SubResource( 7 )
+shape = SubResource( 8 )
+
+[node name="0" type="Area2D" parent="Melee"]
+visible = false
+collision_layer = 3
+collision_mask = 3
+script = ExtResource( 3 )
+next_attack = 1
+targets = PoolStringArray( "enemy", "switch" )
+
+[node name="TextureRect" type="TextureRect" parent="Melee/0"]
+margin_left = 14.0
+margin_top = -20.0
+margin_right = 34.0
+margin_bottom = 20.0
+texture = SubResource( 10 )
+expand = true
+
+[node name="Area0" type="CollisionShape2D" parent="Melee/0"]
+position = Vector2( 24, 0 )
+shape = SubResource( 11 )
 
 [node name="Aim" type="Node" parent="."]
 
@@ -128,12 +134,12 @@ shape = SubResource( 7 )
 visible = false
 margin_right = 10.0
 margin_bottom = 10.0
-texture = SubResource( 9 )
+texture = ExtResource( 4 )
 expand = true
 
 [node name="AimBeam_L" type="TextureRect" parent="Aim"]
 visible = false
 margin_right = 10.0
 margin_bottom = 10.0
-texture = SubResource( 11 )
+texture = ExtResource( 5 )
 expand = true

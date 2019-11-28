@@ -1,21 +1,12 @@
-use nalgebra as na;
 use gdnative::{
-    self as godot,
     NativeClass,
     init::{ClassBuilder, Property, PropertyHint, PropertyUsage, Signal, SignalArgument,},
     user_data::MutexData,
-    NodePath,
     Variant,
     Object,
 };
-use std::time::{Duration, Instant};
-use crate::{
-    util::{
-        Direction,
-        conv,
-    },
-    systems::{self, EditorCfg, inventory::Inventory},
-};
+use std::time::{Duration};
+use crate::systems::{self, System as SysTrait, EditorCfg};
 
 #[derive(Debug)]
 pub struct Cfg {
@@ -94,18 +85,6 @@ pub struct Data {
 }
 
 impl Data {
-    fn hp(&self) -> f64 {
-        self.hp
-    }
-    fn set_hp(&mut self, hp: f64, owner: Option<&mut Object>) {
-        self.hp = hp;
-        if let Some(node) = owner {
-            unsafe {
-                node.emit_signal(Cfg::HP_SIGNAL.into(), &[Variant::from_u64(self.hp.to_bits())]);
-            }
-        }
-    }
-
     fn process(&mut self, delta: Duration) {
         if let Some(inv) = self.invincibility.as_mut() {
             if *inv > delta {
@@ -120,6 +99,7 @@ impl Data {
 #[derive(Default, Debug)]
 pub struct System {
     pub cfg: Cfg,
+    cache: (),
     pub data: Option<Data>,
 }
 
@@ -181,5 +161,18 @@ impl System {
 impl System {
     pub fn call_damage(mut target: Object, dmg: f64) {
         unsafe { target.call("damage".into(), &[Variant::from_f64(dmg)]) };
+    }
+}
+
+impl SysTrait for System {
+    type Cfg = Cfg;
+    type Cache = ();
+    type Data = Data;
+
+    fn view(&self) -> (&Self::Cfg, Option<&Self::Cache>, Option<&Self::Data>) {
+        (&self.cfg, Some(&()), self.data.as_ref())
+    }
+    fn view_mut(&mut self) -> (&mut Self::Cfg, Option<&mut Self::Cache>, Option<&mut Self::Data>) {
+        (&mut self.cfg, Some(&mut self.cache), self.data.as_mut())
     }
 }

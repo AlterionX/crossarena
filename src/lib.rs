@@ -52,6 +52,7 @@ fn init(handle: gdnative::init::InitHandle) {
 
     handle.add_class::<entity::Player>();
     handle.add_class::<entity::NormalProjectile>();
+    handle.add_class::<entity::ChargedProjectile>();
     handle.add_class::<entity::MeleeAttack>();
 
     handle.add_class::<entity::SimpleEnemy>();

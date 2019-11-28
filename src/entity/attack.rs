@@ -6,7 +6,6 @@ use gdnative::{
     init::{ClassBuilder, Property, PropertyHint},
     user_data::MutexData,
     StringArray,
-    Variant,
 };
 use std::time::Duration;
 
@@ -34,8 +33,8 @@ struct Cfg {
 
 impl Cfg {
     const NEXT_ATTACK: Option<u64> = None;
-    const HIT_DURATION: Duration = Duration::from_millis(100);
-    const COOLDOWN_DURATION: Duration = Duration::from_millis(100);
+    const HIT_DURATION: Duration = Duration::from_millis(300);
+    const COOLDOWN_DURATION: Duration = Duration::from_millis(500);
     const ANIMATION_DURATION: Duration = Duration::from_millis(500);
     const DMG: f64 = 10.;
     // TODO switch default to player later.
@@ -188,6 +187,10 @@ impl Data {
             self.remaining_animating_duration = Self::ZERO;
         }
     }
+
+    fn can_hit(&self) -> bool {
+        self.remaining_hit_duration != Self::ZERO
+    }
 }
 
 #[derive(Default, Debug)]
@@ -221,6 +224,7 @@ impl Attack {
             .flat_map(|s| s.try_to_object())
             .collect()
     }
+
     fn can_hit(&self, target: &Node) -> bool {
         let data = if let Some(data) = &self.data {
             data
@@ -233,7 +237,7 @@ impl Attack {
         }
 
         let target_groups = unsafe { target.get_groups() };
-        'match_loop: for body_group in target_groups.iter().flat_map(|s| s.try_to_godot_string()) {
+        for body_group in target_groups.iter().flat_map(|s| s.try_to_godot_string()) {
             for target in &self.cfg.target {
                 if target == &body_group {
                     return true;
@@ -246,7 +250,7 @@ impl Attack {
 
 #[methods]
 impl Attack {
-    fn _init(mut owner: Area2D) -> Self {
+    fn _init(_owner: Area2D) -> Self {
         Default::default()
     }
 
@@ -259,17 +263,21 @@ impl Attack {
     fn _physics_process(&mut self, owner: Area2D, delta: f64) {
         let delta = Duration::from_secs_f64(delta);
 
-        if self.data.is_none() {
+        let data = if let Some(data) = self.data.as_ref() {
+            data
+        } else {
             return;
         };
 
         // Hit
-        let hit: Vec<_> = self.get_hit_objects(owner)
-            .into_iter()
-            .filter(|obj| self.can_hit(obj))
-            .collect();
-        for obj in hit.clone() {
-            HealthSys::call_damage(unsafe { obj.to_object() }, self.cfg.dmg);
+        if data.can_hit() {
+            let hit: Vec<_> = self.get_hit_objects(owner)
+                .into_iter()
+                .filter(|obj| self.can_hit(obj))
+                .collect();
+            for obj in hit.clone() {
+                HealthSys::call_damage(unsafe { obj.to_object() }, self.cfg.dmg);
+            }
         }
 
         // Check if attack is completed.
@@ -277,15 +285,15 @@ impl Attack {
             data.step_time(delta);
             data.is_finished()
         }) {
-            self.data = None;
-            let mut owner = unsafe { owner.to_canvas_item() };
-            unsafe { owner.set_visible(false) };
+            self.reset(owner)
         }
     }
+}
 
-    #[export]
-    fn execute(&mut self, mut owner: Area2D, dir: Option<f64>) {
+impl Attack {
+    pub fn execute(&mut self, mut owner: Area2D, dir: Direction) {
         use std::f64::consts::PI;
+        let dir = dir.to_radians();
         if let Some(dir) = dir {
             self.data = Some(Data {
                 remaining_cooldown_duration: self.cfg.cooldown_duration,
@@ -309,37 +317,17 @@ impl Attack {
         }
     }
 
-    #[export]
-    fn next_attack(&self, _owner: Area2D) -> Option<u64> {
+    pub fn reset(&mut self, owner: Area2D) {
+        self.data = None;
+        let mut owner = unsafe { owner.to_canvas_item() };
+        unsafe { owner.set_visible(false) };
+    }
+
+    pub fn next_attack(&self) -> Option<u64> {
         self.cfg.next_attack
     }
 
-    #[export]
-    fn cooldown(&self, _owner: Area2D) -> u64 {
-        self.cfg.cooldown_duration.as_millis() as u64
-    }
-}
-
-impl Attack {
-    pub fn call_next_attack(owner: &mut Area2D) -> Option<u64> {
-        // Next attack
-        let next_atk_fn = "next_attack".into();
-        unsafe { owner.call(next_atk_fn, &[]).try_to_u64() }
-    }
-    pub fn call_cooldown(owner: &mut Area2D) -> Option<Duration> {
-        // Cooldown until can use another attack.
-        let cooldown_fn = "cooldown".into();
-        let cooldown = unsafe {
-            owner.call(cooldown_fn, &[])
-        }.try_to_u64()?;
-        Some(Duration::from_millis(cooldown))
-    }
-    pub fn call_execute(mut owner: Area2D, dir: Direction) {
-        log::info!("Attempting to attack in the {:?} direction.", dir);
-        unsafe {
-            owner.call("execute".into(), &[
-                dir.to_radians().map_or_else(|| Variant::new(), |r| Variant::from_f64(r)),
-            ]);
-        }
+    pub fn cooldown(&self) -> Duration {
+        self.cfg.cooldown_duration
     }
 }

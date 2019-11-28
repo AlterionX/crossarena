@@ -16,11 +16,11 @@ use crate::{
     },
     systems::{
         EditorCfg,
-        health::{System as HealthSys, Cfg as HealthCfg},
+        health::{System as HealthSys},
         inventory::Inventory,
-        aim::{System as AimSys, Cfg as AimCfg},
-        dash::{System as DashSys, Cfg as DashCfg},
-        melee::{System as MeleeSys, Cfg as MeleeCfg},
+        aim::{System as AimSys},
+        dash::{System as DashSys},
+        melee::{System as MeleeSys},
     },
 };
 
@@ -81,10 +81,10 @@ impl godot::NativeClass for Player {
     }
 
     fn register_properties(builder: &godot::init::ClassBuilder<Self>) {
-        DashCfg::register_properties(builder, |this| &this.dash.cfg, |this| &mut this.dash.cfg);
-        AimCfg::register_properties(builder, |this| &this.aim.cfg, |this| &mut this.aim.cfg);
-        MeleeCfg::register_properties(builder, |this| &this.melee.cfg, |this| &mut this.melee.cfg);
-        HealthCfg::register_properties(builder, |this| &this.health.cfg, |this| &mut this.health.cfg);
+        DashSys::register_properties(builder, |this| &this.dash, |this| &mut this.dash);
+        AimSys::register_properties(builder, |this| &this.aim, |this| &mut this.aim);
+        MeleeSys::register_properties(builder, |this| &this.melee, |this| &mut this.melee);
+        HealthSys::register_properties(builder, |this| &this.health, |this| &mut this.health);
     }
 }
 
@@ -110,17 +110,18 @@ impl Player {
                 BUTTON_L => if self.dash.is_dashing() {
                     // Do nothing
                 } else if dist_from_sprite > self.melee_radius {
-                    self.melee.reset();
-                    self.aim.aim_at(unsafe { owner.to_node() }, conv::g_to_na64(mouse_pos))
+                    if self.melee.is_attacking() {
+                        self.aim.aim_at(unsafe { owner.to_node() }, conv::g_to_na64(mouse_pos));
+                    }
                 } else {
-                    self.melee.attack(unsafe { owner.to_node_2d() }, self.facing_dir);
+                    self.melee.attack(unsafe { owner.to_node() }, self.facing_dir);
                 },
                 // Dashing
                 // Overrides any other action.
                 BUTTON_R => {
                     // TODO reset any other state.
                     self.aim.reset(unsafe { owner.to_node() });
-                    self.melee.reset();
+                    self.melee.reset(unsafe { owner.to_node() });
                     self.health.set_invincibility(self.dash.invincibility());
                     self.dash.dash(self.facing_dir);
                 },
@@ -138,7 +139,7 @@ impl Player {
                 BUTTON_L => if self.dash.is_dashing() {
                     // Do nothing
                 } else if self.aim.is_aiming() {
-                    self.aim.attack(own_pos, unsafe { owner.to_node() }, self.calc_projectile_dmg());
+                    self.aim.shoot(own_pos, unsafe { owner.to_node() }, self.calc_projectile_dmg());
                 },
                 _ => (),
             }
