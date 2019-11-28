@@ -691,6 +691,7 @@ impl System {
                         unsafe { owner.get_name() }.to_string(),
                     ))?;
             } else {
+                log::info!("Normal projectile being launched.");
                 let projectile: Instance<NormalProjectile> = Instance::try_from_base(projectile)
                     .tap_none(|| log::warn!(
                         "Provided normal projectile scene does not have \

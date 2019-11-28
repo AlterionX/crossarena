@@ -71,11 +71,20 @@ impl EditorCfg for Cfg {
     }
 }
 
-#[derive(Default)]
 pub struct Normal {
     cfg: Cfg,
-    dir: godot::Vector2,
+    dir: na::Vector2<f64>,
     dmg: f64,
+}
+
+impl Default for Normal {
+    fn default() -> Self {
+        Self {
+            cfg: Default::default(),
+            dir: na::Vector2::zeros(),
+            dmg: Default::default(),
+        }
+    }
 }
 
 impl godot::NativeClass for Normal {
@@ -95,6 +104,18 @@ impl godot::NativeClass for Normal {
     }
 }
 
+impl Normal {
+    fn inflict(&self, _owner: KinematicBody2D, target: Object) {
+        if let Some(target) = unsafe { target.cast::<Node>() } {
+            log::info!("Projectile collided with {:?}.", unsafe { target.get_name() });
+            let groups = unsafe { target.get_groups() };
+            if groups.contains(&(&GodotString::from("enemy")).into()) || groups.contains(&(&GodotString::from("switch")).into()) {
+                HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
+            }
+        }
+    }
+}
+
 #[methods]
 impl Normal {
     fn _init(_owner: KinematicBody2D) -> Self {
@@ -107,22 +128,13 @@ impl Normal {
         log::info!("Hello from projectile.")
     }
 
-    fn inflict(&self, _owner: KinematicBody2D, target: Object) {
-        if let Some(target) = unsafe { target.cast::<Node>() } {
-            log::info!("Projectile collided with {:?}.", unsafe { target.get_name() });
-            let groups = unsafe { target.get_groups() };
-            if groups.contains(&(&GodotString::from("enemy")).into()) || groups.contains(&(&GodotString::from("switch")).into()) {
-                HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
-            }
-        }
-    }
-
     #[export]
     fn _physics_process(&mut self, mut owner: KinematicBody2D, _delta: f64) {
         // TODO make velocity a param.
-        if let Some(collision) = unsafe { owner.move_and_collide(self.dir * (self.cfg.velocity as f32), true, true, false) } {
+        if let Some(collision) = unsafe {
+            owner.move_and_collide(conv::na64_to_g(self.dir * self.cfg.velocity), true, true, false)
+        } {
             if let Some(collider) = collision.get_collider() {
-                log::info!("Inflicting damage!");
                 self.inflict(owner, collider);
             }
             unsafe { owner.queue_free(); }
@@ -138,21 +150,28 @@ impl Normal {
         dir: na::Vector2<f64>,
         dmg: f64,
     ) {
-        let pos = conv::na64_to_g(pos);
-        let dir = conv::na64_to_g(dir);
-        unsafe { owner.set_position(pos); }
         self.dir = dir;
-        unsafe { owner.set_global_position(dir) };
         self.dmg = dmg;
+        unsafe { owner.set_global_position(conv::na64_to_g(pos)) };
     }
 }
 
-#[derive(Default)]
 pub struct Charged {
     cfg: Cfg,
-    dir: godot::Vector2,
+    dir: na::Vector2<f64>,
     dmg: f64,
     remaining_bounces: u64,
+}
+
+impl Default for Charged {
+    fn default() -> Self {
+        Self {
+            cfg: Default::default(),
+            dir: na::Vector2::zeros(),
+            dmg: Default::default(),
+            remaining_bounces: Default::default(),
+        }
+    }
 }
 
 impl NativeClass for Charged {
@@ -172,6 +191,36 @@ impl NativeClass for Charged {
     }
 }
 
+impl Charged {
+    fn inflict(&self, _owner: KinematicBody2D, target: Object) {
+        log::info!("Inflicting damage!");
+        if let Some(target) = unsafe { target.cast::<Node>() } {
+            log::info!("Projectile collided with {}.", unsafe { target.get_name() }.to_string());
+            if Group::Enemy.has_node(target) || Group::Switch.has_node(target) {
+                HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
+            }
+        }
+    }
+
+    fn bounce(&mut self, mut owner: KinematicBody2D, target: Object, normal: na::Vector2<f64>) {
+        log::info!("Bouncing!");
+        if let Some(target) = unsafe { target.cast::<Node>() } {
+            log::info!("Projectile collided with {}.", unsafe { target.get_name() }.to_string());
+            if
+                !Group::Enemy.has_node(target)
+                    && !Group::Switch.has_node(target)
+                    && self.remaining_bounces > 0
+            {
+                self.remaining_bounces -= 1;
+                let reflected_velocity = self.dir * self.dir.dot(&normal);
+                self.dir += reflected_velocity;
+            } else {
+                unsafe { owner.queue_free(); }
+            }
+        }
+    }
+}
+
 #[methods]
 impl Charged {
     fn _init(_owner: KinematicBody2D) -> Self {
@@ -184,39 +233,16 @@ impl Charged {
         log::info!("Hello from projectile.")
     }
 
-    fn inflict(&self, _owner: KinematicBody2D, target: Object) {
-        if let Some(target) = unsafe { target.cast::<Node>() } {
-            log::info!("Projectile collided with {:?}.", unsafe { target.get_name() });
-            if Group::Enemy.has_node(target) || Group::Switch.has_node(target) {
-                HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
-            }
-        }
-    }
-
-    fn bounce(&mut self, mut owner: KinematicBody2D, target: Object, normal: na::Vector2<f64>) {
-        if let Some(target) = unsafe { target.cast::<Node>() } {
-            log::info!("Projectile collided with {:?}.", unsafe { target.get_name() });
-            if !Group::Enemy.has_node(target) && Group::Switch.has_node(target) {
-                let cos = conv::g_to_na64(self.dir).dot(&normal);
-                let reflect_vec = 2. * (cos * normal);
-                self.dir -= conv::na64_to_g(reflect_vec);
-            } else {
-                unsafe { owner.queue_free(); }
-            }
-        }
-    }
-
     #[export]
     fn _physics_process(&mut self, mut owner: KinematicBody2D, _delta: f64) {
         // TODO make velocity a param.
         if let Some(collision) = unsafe {
             owner.move_and_collide(
-                self.dir * (self.cfg.velocity as f32),
+                conv::na64_to_g(self.dir * self.cfg.velocity),
                 true, true, false
             )
         } {
             if let Some(collider) = collision.get_collider() {
-                log::info!("Inflicting damage!");
                 self.inflict(owner, collider);
                 self.bounce(owner, collider, conv::g_to_na64(collision.get_normal()));
             } else {
@@ -234,12 +260,10 @@ impl Charged {
         dir: na::Vector2<f64>,
         dmg: f64,
     ) {
-        let pos = conv::na64_to_g(pos);
-        let dir = conv::na64_to_g(dir);
-        unsafe { owner.set_position(pos); }
         self.dir = dir;
-        unsafe { owner.set_global_position(dir) };
         self.dmg = dmg;
         self.remaining_bounces = self.cfg.max_bounces;
+
+        unsafe { owner.set_global_position(conv::na64_to_g(pos)) };
     }
 }
