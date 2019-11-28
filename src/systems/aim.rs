@@ -327,22 +327,29 @@ impl Cache {
         let mut loader = ResourceLoader::godot_singleton();
         let normal_scene = loader
             .load(cfg.normal_projectile.new_ref(), "PackedScene".into(), false)
-            .and_then(|loaded| loaded.cast::<PackedScene>())?;
+            .and_then(|loaded| loaded.cast::<PackedScene>())
+            .tap_none(|| log::warn!("Failed to load projectile scene."))?;
         let charged_scene = loader
             .load(cfg.charged_projectile.new_ref(), "PackedScene".into(), false)
-            .and_then(|loaded| loaded.cast::<PackedScene>())?;
+            .and_then(|loaded| loaded.cast::<PackedScene>())
+            .tap_none(|| log::warn!("Failed to load charged projectile scene."))?;
         let ufan_normal = loader
             .load(cfg.ufan_normal_texture.new_ref(), "Texture".into(), false)
-            .and_then(|loaded| loaded.cast::<Texture>())?;
+            .and_then(|loaded| loaded.cast::<Texture>())
+            .tap_none(|| log::warn!("Failed to load upper fan normal texture."))?;
         let lfan_normal = loader
             .load(cfg.lfan_normal_texture.new_ref(), "Texture".into(), false)
-            .and_then(|loaded| loaded.cast::<Texture>())?;
+            .and_then(|loaded| loaded.cast::<Texture>())
+            .tap_none(|| log::warn!("Failed to load lower fan normal texture."))?;
         let ufan_charged = loader
-            .load(cfg.ufan_charged_texture.new_ref(), "Textuee".into(), false)
-            .and_then(|loaded| loaded.cast::<Texture>())?;
+            .load(cfg.ufan_charged_texture.new_ref(), "Texture".into(), false)
+            .and_then(|loaded| loaded.cast::<Texture>())
+            .tap_none(|| log::warn!("Failed to load upper fan charged texture."))?;
         let lfan_charged = loader
             .load(cfg.lfan_charged_texture.new_ref(), "Texture".into(), false)
-            .and_then(|loaded| loaded.cast::<Texture>())?;
+            .and_then(|loaded| loaded.cast::<Texture>())
+            .tap_none(|| log::warn!("Failed to load lower fan charged texture."))?;
+        log::info!("Aim system cache loaded succesfully.");
         Some(Self {
             projectile_scene: Arc::new(Mutex::new(normal_scene)),
             charged_projectile_scene: Arc::new(Mutex::new(charged_scene)),
@@ -387,7 +394,7 @@ impl Data {
             pos,
             stage: Stage::WarmUp,
             time_to_aim: cfg.max_aim_time,
-            time_to_charge: Duration::from_millis(0),
+            time_to_charge: cfg.charge_time,
             cooling_down: Duration::from_millis(0),
         }
     }
@@ -513,11 +520,6 @@ impl System {
 
     pub fn set_fan_charged(&self, owner: Node, is_charged: bool) {
         let (cfg, cache, _) = self.view();
-        if is_charged {
-            log::info!("Fan should be charged.");
-        } else {
-            log::info!("Fan should not be charged.");
-        }
         let (upper, lower) = unsafe { (
             owner.get_node(cfg.upper_fan.new_ref()),
             owner.get_node(cfg.lower_fan.new_ref()),

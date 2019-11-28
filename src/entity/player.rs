@@ -110,7 +110,7 @@ impl Player {
                 BUTTON_L => if self.dash.is_dashing() {
                     // Do nothing
                 } else if dist_from_sprite > self.melee_radius {
-                    if self.melee.is_attacking() {
+                    if !self.melee.is_attacking() {
                         self.aim.aim_at(unsafe { owner.to_node() }, conv::g_to_na64(mouse_pos));
                     }
                 } else {

@@ -86,7 +86,7 @@ out.
 - [x] Attack scenes (aka hitbox frames) + naming scheme
 - [x] Small melee combo
 - [x] Projectiles
-- [ ] Indicators for when charged shot is ready
+- [x] Indicators for when charged shot is ready
 - [ ] Charged projectiles (ricochet)
 - [x] Damage
 
