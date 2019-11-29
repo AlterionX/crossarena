@@ -2,3 +2,5 @@
 **/*.rs.bk
 
 /scratch
+
+.import
