@@ -87,7 +87,7 @@ out.
 - [x] Small melee combo
 - [x] Projectiles
 - [x] Indicators for when charged shot is ready
-- [ ] Charged projectiles (ricochet)
+- [x] Charged projectiles (ricochet)
 - [x] Damage
 
 Along with the more "stretch" goals.

@@ -24,6 +24,7 @@ use wave::*;
 struct Cfg {
     switch: GodotString,
     world: NodePath,
+    player: NodePath,
     arena_dim: na::Vector2<f64>,
     arena_pos: na::Vector2<f64>,
 }
@@ -31,6 +32,7 @@ struct Cfg {
 impl Cfg {
     pub const WORLD: &'static str = "World";
     pub const SWITCH: &'static str = "res://switch/switch.tscn";
+    pub const PLAYER: &'static str = "Player";
     pub const ARENA_DIM: [f64; 2] = [944., 520.];
     pub const ARENA_POS: [f64; 2] = [40., 40.];
 }
@@ -40,6 +42,7 @@ impl Default for Cfg {
         Self {
             world: NodePath::from_str(Self::WORLD),
             switch: Self::SWITCH.into(),
+            player: Self::PLAYER.into(),
             arena_dim: na::Vector2::from_column_slice(&Self::ARENA_DIM),
             arena_pos: na::Vector2::from_column_slice(&Self::ARENA_POS),
         }
@@ -122,6 +125,14 @@ impl godot::NativeClass for Arena {
             hint: PropertyHint::None,
             getter: |this: &Arena| this.cfg.world.new_ref(),
             setter: |this: &mut Arena, world| this.cfg.world = world,
+            usage: default_usage,
+        });
+        builder.add_property(Property {
+            name: "player",
+            default: NodePath::from_str(Cfg::PLAYER),
+            hint: PropertyHint::None,
+            getter: |this: &Arena| this.cfg.player.new_ref(),
+            setter: |this: &mut Arena, player| this.cfg.player = player,
             usage: default_usage,
         });
         builder.add_property(Property {
@@ -223,7 +234,7 @@ impl Arena {
             Some(wave) => wave.successor(),
         };
         let world = unsafe { owner.get_node(self.cfg.world.new_ref()) };
-        let spawns = self.spawn_sys.spawn_wave(&wave, world, self.cfg.arena_dim, self.cfg.arena_pos);
+        let spawns = self.spawn_sys.spawn_wave(&wave, world, self.cfg.arena_dim, self.cfg.arena_pos, self.cfg.player.new_ref());
         self.spawn_count = spawns.len() as u64;
         for mut spawn in spawns {
             let mut arr = VariantArray::new();

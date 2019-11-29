@@ -193,27 +193,25 @@ impl NativeClass for Charged {
 
 impl Charged {
     fn inflict(&self, _owner: KinematicBody2D, target: Object) {
-        log::info!("Inflicting damage!");
         if let Some(target) = unsafe { target.cast::<Node>() } {
             log::info!("Projectile collided with {}.", unsafe { target.get_name() }.to_string());
             if Group::Enemy.has_node(target) || Group::Switch.has_node(target) {
+                log::info!("Inflicting damage!");
                 HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
             }
         }
     }
 
     fn bounce(&mut self, mut owner: KinematicBody2D, target: Object, normal: na::Vector2<f64>) {
-        log::info!("Bouncing!");
         if let Some(target) = unsafe { target.cast::<Node>() } {
-            log::info!("Projectile collided with {}.", unsafe { target.get_name() }.to_string());
             if
                 !Group::Enemy.has_node(target)
                     && !Group::Switch.has_node(target)
                     && self.remaining_bounces > 0
             {
                 self.remaining_bounces -= 1;
-                let reflected_velocity = self.dir * self.dir.dot(&normal);
-                self.dir += reflected_velocity;
+                let reflected_velocity = normal * self.dir.dot(&normal);
+                self.dir -= 2. * reflected_velocity;
             } else {
                 unsafe { owner.queue_free(); }
             }

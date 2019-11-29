@@ -1,8 +1,8 @@
 use nalgebra as na;
 use std::time::Instant;
-use gdnative::{Node, Node2D, PackedScene};
+use gdnative::{Node, Node2D, NodePath, PackedScene};
 
-use crate::{util::conv, entity::arena::spawn::Cache};
+use crate::{util::conv, entity::{arena::spawn::Cache, enemy::Cfg as EnemyCfg}};
 
 pub(super) struct Spawn {
     pos: na::Vector2<f64>,
@@ -10,7 +10,7 @@ pub(super) struct Spawn {
 }
 
 impl Spawn {
-    pub fn spawn(self, root: &mut Node, cache: &Cache) -> Result<Option<Node>, ()> {
+    pub fn spawn(self, root: &mut Node, cache: &Cache, target: NodePath) -> Result<Option<Node>, ()> {
         log::info!("Spawning enemy {} at {:?}.", self.spawn_id, self.pos);
         let enemy = if let Some(enemy) = cache.get_spawn(self.spawn_id) {
             enemy
@@ -26,6 +26,7 @@ impl Spawn {
             root.add_child(instance, false);
             if let Some(mut instance) = instance.and_then(|instance| instance.cast::<Node2D>()) {
                 instance.set_global_position(conv::na64_to_g(self.pos));
+                EnemyCfg::call_set_target(instance.to_node(), target);
             }
         }
         Ok(instance)

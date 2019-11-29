@@ -15,6 +15,7 @@ width = 20
 collision_layer = 3
 collision_mask = 3
 script = ExtResource( 1 )
+health/max_hp = 10000.0
 
 [node name="TextureRect" type="TextureRect" parent="."]
 margin_left = -10.0

@@ -156,6 +156,10 @@ impl System {
             |data| data.hp,
         )
     }
+
+    pub fn get_max_hp(&self) -> u64 {
+        self.cfg.max_hp as u64
+    }
 }
 
 impl System {

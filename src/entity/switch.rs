@@ -8,7 +8,7 @@ use gdnative::{
     user_data::MutexData,
     Variant,
 };
-use crate::systems::{self, EditorCfg,};
+use crate::{util::Group, systems::{self, EditorCfg,}};
 
 pub struct Cfg {
     target: NodePath,
@@ -99,7 +99,7 @@ impl Switch {
 
     #[export]
     fn _ready(&self, owner: StaticBody2D) {
-        unsafe { owner.to_node().add_to_group("switch".into(), false) };
+        Group::Switch.add_node(unsafe { owner.to_node() });
         log::info!("Hello from switch.")
     }
 
@@ -129,15 +129,6 @@ impl Switch {
                     Variant::from_node_path(&target),
                     Variant::from_godot_string(&method),
                 ])
-            };
-        }
-    }
-    pub fn call_switch(mut switch: StaticBody2D) {
-        let switch_method: GodotString = "switch".into();
-        if unsafe { switch.has_method(switch_method.new_ref()) } {
-            // TODO random aim based on how long was aimed for.
-            unsafe {
-                switch.call(switch_method, &[])
             };
         }
     }

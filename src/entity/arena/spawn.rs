@@ -1,19 +1,19 @@
 use nalgebra as na;
 use gdnative::{
     Node,
+    NodePath,
     PackedScene,
     ProjectSettings,
     ResourceLoader,
     GodotString,
 };
-use std::{fs::File, path::Path, io::{self, BufReader}, sync::{Arc, Mutex}};
+use std::{path::Path, io, sync::{Arc, Mutex}};
 
 use crate::{
     entity::{
         arena::wave::Wave,
         enemy::Cfg as EnemyCfg
     },
-    util::error::JsonIOError,
 };
 
 #[derive(Debug)]
@@ -40,23 +40,15 @@ impl Data {
         })())
     }
 
-    fn read_enemy_cfg(arena_cfg: &Cfg, dir: &Path) -> Result<EnemyCfg, JsonIOError> {
-        let enemy_cfg_path = dir.join(&arena_cfg.cfg_file);
-        log::info!("Loading enemy values from: {:?}.", &enemy_cfg_path);
-        let file = File::open(enemy_cfg_path)?;
-        let buf_reader = BufReader::new(file);
-        Ok(json::from_reader(buf_reader)?)
+    fn read_enemy_cfg(sc: PackedScene) -> Option<EnemyCfg> {
+        EnemyCfg::call_get_cfg(sc.instance(PackedScene::GEN_EDIT_STATE_INSTANCE)?)
     }
 
-    pub(super) fn load_from(arena_cfg: &Cfg, dir: &Path) -> Result<Self, JsonIOError> {
-        let scene = Self::load_scene(dir).and_then(|opt_scene| if let Some(scene) = opt_scene {
-            Ok(scene)
-        } else {
-            Err(io::ErrorKind::NotFound.into())
-        })?;
-        Ok(Self {
+    pub(super) fn load_from(_: &Cfg, dir: &Path) -> Option<Self> {
+        let scene = Self::load_scene(dir).ok()??;
+        Some(Self {
+            cfg: Self::read_enemy_cfg(scene.new_ref())?,
             scene: Arc::new(Mutex::new(scene)),
-            cfg: Self::read_enemy_cfg(arena_cfg, dir)?,
         })
     }
 }
@@ -99,7 +91,7 @@ pub(super) struct Cache {
 
 impl Cache {
     // TODO Don't load everything at once.
-    pub fn load_with(cfg: &Cfg) -> Result<Self, JsonIOError> {
+    pub fn load_with(cfg: &Cfg) -> io::Result<Self> {
         use std::fs::read_dir;
         log::info!("Loading cache from: {:?}", cfg.dir);
         let templates = read_dir(&cfg.dir)?
@@ -109,12 +101,14 @@ impl Cache {
                 Data::load_from(
                     cfg,
                     &p.canonicalize()?
-                )
+                ).ok_or(io::Error::new(io::ErrorKind::NotFound, "Cannot load data."))
             }))
             .collect::<Result<_, _>>()?;
-        Ok(Self {
+        let ret = Self {
             templates,
-        })
+        };
+        log::info!("Finished loading data. Loaded {} elements: {:?}", ret.templates.len(), ret.templates);
+        Ok(ret)
     }
 
     pub fn get_spawn(&self, id: u64) -> Option<&Data> {
@@ -152,11 +146,12 @@ impl System {
         mut world: Option<Node>,
         arena_dim: na::Vector2<f64>,
         arena_pos: na::Vector2<f64>,
+        target: NodePath,
     ) -> Vec<Node> {
-        if let (Some(cache), Some(world)) = (self.cache.as_ref(), &mut world) {
+        if let (Some(cache), Some(world)) = (self.cache.as_ref(), world.as_mut()) {
             wave.generate_spawns(cache, arena_pos, arena_dim)
                 .into_iter()
-                .map(|s| s.spawn(world, cache))
+                .map(|s| s.spawn(world, cache, target.new_ref()))
                 .filter_map(Result::ok)
                 .filter_map(|x| x)
                 .collect()

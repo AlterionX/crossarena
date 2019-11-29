@@ -38,6 +38,7 @@ bg_color = Color( 1, 0.435294, 0.435294, 1 )
 
 [node name="Arena" type="Node"]
 script = ExtResource( 1 )
+player = NodePath("World/Player")
 
 [node name="World" type="Control" parent="."]
 anchor_right = 1.0

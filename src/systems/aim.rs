@@ -456,8 +456,9 @@ impl Data {
     fn step_time(&mut self, cfg: &Cfg, delta: Duration) -> Option<TimeEvent> {
         match self.stage {
             Stage::WarmUp => {
+                let was_not_charged = self.time_to_charge != Duration::from_millis(0);
                 self.adv_time(delta);
-                (self.time_to_charge == Duration::from_millis(0)).as_some(TimeEvent::ChargedUp)
+                (was_not_charged && self.time_to_charge == Duration::from_millis(0)).as_some(TimeEvent::ChargedUp)
             },
             Stage::Cooldown => {
                 self.cooling_down += delta;
@@ -466,9 +467,9 @@ impl Data {
         }
     }
 
-    fn possible_angle_offsets(&self, cfg: &Cfg) -> RangeInclusive<f64> {
+    fn possible_angle_offsets(&self, cfg: &Cfg, log_level: log::Level) -> RangeInclusive<f64> {
         let percentage_to_full_aim = self.time_to_aim.as_secs_f64() / cfg.max_aim_time.as_secs_f64();
-        log::info!("Aim off from ideal: {}, {:?}, {:?}", percentage_to_full_aim * 100., self.time_to_aim, cfg.max_aim_time);
+        log::log!(log_level, "Aim off from ideal: {}, {:?}, {:?}", percentage_to_full_aim * 100., self.time_to_aim, cfg.max_aim_time);
         let off_angle = cfg.aim_range_off_rot * percentage_to_full_aim;
         let off_angle = off_angle.abs();
         -off_angle..=off_angle
@@ -480,7 +481,7 @@ impl Data {
         };
         log::info!("Time and max: {:?}, {:?}", aim_duration, cfg.max_aim_time);
         if aim_duration > Duration::from_millis(0) {
-            let aim_distribution = Uniform::from(self.possible_angle_offsets(cfg));
+            let aim_distribution = Uniform::from(self.possible_angle_offsets(cfg, log::Level::Info));
             let aim_off = aim_distribution.sample(&mut rand::thread_rng());
             let rot_mat = common_mats::rotation(aim_off);
             rot_mat * ideal
@@ -557,18 +558,13 @@ impl System {
             owner.get_node(cfg.upper_fan.new_ref()),
             owner.get_node(cfg.lower_fan.new_ref()),
         ) };
-        let (start, end) = data.possible_angle_offsets(cfg).into_inner();
+        let (start, end) = data.possible_angle_offsets(cfg, log::Level::Trace).into_inner();
         let to_aim = data.pos - from;
         upper.map(|upper| self.align_single_fan(upper, from, to_aim, start));
         lower.map(|lower| self.align_single_fan(lower, from, to_aim, end));
     }
 
     fn set_fan_visibility(&self, owner: Node, should_be_visible: bool) {
-        if should_be_visible {
-            log::info!("Aim fan should be visible.");
-        } else {
-            log::info!("Aim fan should be invisible.");
-        }
         let (upper, lower) = unsafe { (
             owner.get_node(self.cfg.upper_fan.new_ref()),
             owner.get_node(self.cfg.lower_fan.new_ref()),
