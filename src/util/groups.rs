@@ -2,7 +2,7 @@ use gdnative::{init::PropertyHint, GodotString, Node};
 
 const ENEMY: &'static str = "enemy";
 const PLAYER: &'static str = "player";
-const SWITCH: &'static str = "player";
+const SWITCH: &'static str = "switch";
 const PROJECTILE: &'static str = "projectile";
 
 const PLAYER_MASK: i64 = 1 << 0;

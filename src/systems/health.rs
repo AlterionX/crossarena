@@ -11,10 +11,12 @@ use crate::systems::{self, System as SysTrait, EditorCfg};
 #[derive(Debug)]
 pub struct Cfg {
     max_hp: f64,
+    invincibility_on_damage: Duration,
 }
 
 impl Cfg {
     const MAX_HP: f64 = 100.;
+    const INVINCIBILITY_ON_DAMAGE: Duration = Duration::from_millis(0);
 
     const MAX_HP_SIGNAL: &'static str = "max_hp";
     const HP_SIGNAL: &'static str = "hp";
@@ -24,6 +26,7 @@ impl Default for Cfg {
     fn default() -> Self {
         Cfg {
             max_hp: Self::MAX_HP,
+            invincibility_on_damage: Self::INVINCIBILITY_ON_DAMAGE,
         }
     }
 }
@@ -47,6 +50,16 @@ impl EditorCfg for Cfg {
             hint: PropertyHint::None,
             getter: move |this: &T| get(this).max_hp,
             setter: move |this: &mut T, path| get_mut(this).max_hp = path,
+            usage: *systems::DEFAULT_USAGE,
+        });
+        let get = get_proto.clone();
+        let get_mut = get_mut_proto.clone();
+        builder.add_property(Property {
+            name: "health/invincibility_on_damage",
+            default: Self::INVINCIBILITY_ON_DAMAGE.as_millis() as u64,
+            hint: PropertyHint::None,
+            getter: move |this: &T| get(this).invincibility_on_damage.as_millis() as u64,
+            setter: move |this: &mut T, invincibility| get_mut(this).invincibility_on_damage = Duration::from_millis(invincibility),
             usage: *systems::DEFAULT_USAGE,
         });
         builder.add_signal(Signal {
@@ -143,13 +156,14 @@ impl System {
         if !self.is_invincible() {
             if let Some(data) = self.data.as_mut() {
                 data.hp -= dmg;
+                data.invincibility = Some(self.cfg.invincibility_on_damage);
                 if data.hp <= 0. {
                     self.data = None;
                 }
             }
-        }
-        if let Some(target) = to_notify.as_mut() {
-            self.broadcast_hp(target);
+            if let Some(target) = to_notify.as_mut() {
+                self.broadcast_hp(target);
+            }
         }
         self.data.as_ref().map_or(
             0.,

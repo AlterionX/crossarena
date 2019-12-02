@@ -6,6 +6,10 @@ use gdnative::{
 
 mod hud;
 pub use hud::HUD;
+mod end;
+pub use end::End;
+mod start;
+pub use start::Start;
 
 #[derive(Debug)]
 struct Cfg {

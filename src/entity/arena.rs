@@ -2,6 +2,7 @@ use nalgebra as na;
 use gdnative::{
     self as godot,
     GodotString,
+    Instance,
     Node,
     NodePath,
     Object,
@@ -13,7 +14,7 @@ use gdnative::{
 };
 use std::sync::{Arc, Mutex};
 use tap::TapOptionOps;
-use crate::entity::switch::Switch;
+use crate::{util::path_ops, records::{Record, Records}, entity::switch::Switch};
 
 mod spawn;
 use spawn::{Cfg as SpawnCfg, System as SpawnSystem};
@@ -27,6 +28,8 @@ struct Cfg {
     player: NodePath,
     arena_dim: na::Vector2<f64>,
     arena_pos: na::Vector2<f64>,
+
+    end_scene: GodotString,
 }
 
 impl Cfg {
@@ -35,6 +38,8 @@ impl Cfg {
     pub const PLAYER: &'static str = "Player";
     pub const ARENA_DIM: [f64; 2] = [944., 520.];
     pub const ARENA_POS: [f64; 2] = [40., 40.];
+
+    pub const END_SCENE: &'static str = "res://roots/end_game.tscn";
 }
 
 impl Default for Cfg {
@@ -45,6 +50,8 @@ impl Default for Cfg {
             player: Self::PLAYER.into(),
             arena_dim: na::Vector2::from_column_slice(&Self::ARENA_DIM),
             arena_pos: na::Vector2::from_column_slice(&Self::ARENA_POS),
+
+            end_scene: Self::END_SCENE.into(),
         }
     }
 }
@@ -143,6 +150,14 @@ impl godot::NativeClass for Arena {
             setter: |this: &mut Arena, switch: GodotString| this.cfg.switch = switch,
             usage: default_usage,
         });
+        builder.add_property(Property {
+            name: "end_scene",
+            default: Cfg::END_SCENE.into(),
+            hint: PropertyHint::None,
+            getter: |this: &Arena| this.cfg.end_scene.new_ref(),
+            setter: |this: &mut Arena, end| this.cfg.end_scene = end,
+            usage: default_usage,
+        });
         builder.add_signal(Signal {
             name: Self::ARENA_READY.into(),
             args: &[],
@@ -234,19 +249,27 @@ impl Arena {
             Some(wave) => wave.successor(),
         };
         let world = unsafe { owner.get_node(self.cfg.world.new_ref()) };
-        let spawns = self.spawn_sys.spawn_wave(&wave, world, self.cfg.arena_dim, self.cfg.arena_pos, self.cfg.player.new_ref());
-        self.spawn_count = spawns.len() as u64;
-        for mut spawn in spawns {
-            let mut arr = VariantArray::new();
-            arr.push(&Variant::from_object(&spawn));
-            unsafe {
-                spawn.connect(
-                    "tree_exited".into(),
-                    Some(owner.to_object()),
-                    "remove_spawn".into(),
-                    arr,
-                    1,
-                ).expect("No problems.");
+        if let Some(player_path) = path_ops::to_abs_if_exist(self.cfg.player.new_ref(), &owner) {
+            let spawns = self.spawn_sys.spawn_wave(
+                &wave,
+                world,
+                self.cfg.arena_dim,
+                self.cfg.arena_pos,
+                player_path,
+            );
+            self.spawn_count = spawns.len() as u64;
+            for mut spawn in spawns {
+                let mut arr = VariantArray::new();
+                arr.push(&Variant::from_object(&spawn));
+                unsafe {
+                    spawn.connect(
+                        "tree_exited".into(),
+                        Some(owner.to_object()),
+                        "remove_spawn".into(),
+                        arr,
+                        1,
+                    ).expect("No problems.");
+                }
             }
         }
         unsafe {
@@ -256,5 +279,30 @@ impl Arena {
             );
         }
         self.wave = Some(wave);
+    }
+
+    #[export]
+    fn end_game(&self, mut owner: Node) {
+        unsafe {
+            if let Some(tree) = owner.get_tree().as_mut() {
+                owner.queue_free();
+                match tree.change_scene(self.cfg.end_scene.new_ref()) {
+                    Ok(_) => (),
+                    Err(e) => {
+                        log::error!("Could not switch scene to {}! Error occurred: {:?}.", self.cfg.end_scene.to_string(), e);
+                    }
+                }
+                if let Some(records) = Records::get_autoload(owner) {
+                    match records.map_mut(|record, _| record.add_record(Record {
+                        wave_num: self.wave.as_ref().map_or(0, |wave| wave.num())
+                    })) {
+                        Ok(_) => (),
+                        Err(e) => log::info!("Failed to save records on game end! Encountered error: {:?}.", e),
+                    }
+                }
+            } else {
+                log::error!("Arena does not belong to a scene!");
+            }
+        }
     }
 }

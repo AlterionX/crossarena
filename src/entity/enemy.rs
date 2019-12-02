@@ -1,6 +1,8 @@
+use nalgebra as na;
 use gdnative::{
     NativeClass,
     Node,
+    Node2D,
     NodePath,
     KinematicBody2D,
     init::{ClassBuilder},
@@ -9,7 +11,7 @@ use gdnative::{
     user_data::MutexData,
 };
 use crate::{
-    util::Group,
+    util::{conv, Group},
     systems::{
         EditorCfg,
         health::{System as HealthSys, Cfg as HealthCfg},
@@ -49,22 +51,19 @@ impl Cfg {
     }
 }
 
-#[derive(Debug)]
+#[derive(Default, Debug)]
 pub struct Data {
-    target: NodePath,
 }
 
-impl Default for Data {
-    fn default() -> Self {
-        Self {
-            target: ".".into(),
-        }
-    }
+#[derive(Default, Debug)]
+pub struct State {
+    target: Option<NodePath>,
 }
 
 #[derive(Default, Debug)]
 pub struct SimpleEnemy {
     cfg: Cfg,
+    state: State,
     data: Option<Data>,
 
     health: HealthSys,
@@ -87,6 +86,25 @@ impl NativeClass for SimpleEnemy {
     }
 }
 
+impl SimpleEnemy {
+    const BASE_VELOCITY: f64 = 100.;
+    const CONTACT_DAMAGE: f64 = 50.;
+
+    fn get_target(&self, owner: &KinematicBody2D) -> Option<Node2D> {
+        unsafe {
+            owner.get_node(self.state.target.as_ref()?.new_ref())?.cast()
+        }
+    }
+
+    fn calc_vel(&self) -> f64 {
+        Self::BASE_VELOCITY
+    }
+
+    fn calc_dmg(&self) -> f64 {
+        Self::CONTACT_DAMAGE
+    }
+}
+
 #[methods]
 impl SimpleEnemy {
     fn _init(owner: KinematicBody2D) -> Self {
@@ -98,7 +116,6 @@ impl SimpleEnemy {
     fn _ready(&mut self, _owner: KinematicBody2D) {
         self.health.init();
         self.cfg.health = self.health.get_max_hp();
-        log::info!("An enemy has spawned!")
     }
 
     #[export]
@@ -107,11 +124,36 @@ impl SimpleEnemy {
     }
 
     #[export]
-    fn _physics_process(&self, _owner: KinematicBody2D, _delta: f64) {
+    fn _physics_process(&self, mut owner: KinematicBody2D, delta: f64) {
+        let move_dir = if let Some(target) = self.get_target(&owner) {
+            let targ_pos = conv::g_to_na64(unsafe { target.get_global_position() });
+            let own_pos = conv::g_to_na64(unsafe { owner.get_global_position() });
+            let dir = targ_pos - own_pos;
+            let norm = dir.norm();
+            dir / norm
+        } else {
+            na::Vector2::zeros()
+        };
+
+        let col = unsafe {
+            owner.move_and_collide(
+                conv::na64_to_g(move_dir * self.calc_vel() * delta),
+                true,
+                true,
+                false,
+            )
+        };
+        let col = col.and_then(|col| unsafe { col.get_collider()?.cast::<Node>() });
+        if let Some(col) = col {
+            if Group::Player.has_node(col) {
+                HealthSys::call_damage(unsafe { col.to_object() }, self.calc_dmg());
+            }
+        }
     }
 
     #[export]
     fn damage(&mut self, mut owner: KinematicBody2D, dmg: f64) {
+        log::info!("Damage applied!");
         self.health.damage(dmg, None);
         if self.health.is_dead() {
             // TODO Any other cleanup.
@@ -121,10 +163,7 @@ impl SimpleEnemy {
 
     #[export]
     fn set_target(&mut self, _: KinematicBody2D, target: NodePath) {
-        self.data.as_mut().map(|data| {
-            data.target = target;
-            data
-        });
+        self.state.target = Some(target);
     }
 
     #[export]

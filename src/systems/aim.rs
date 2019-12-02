@@ -45,6 +45,8 @@ pub struct Cfg {
     ufan_charged_texture: GodotString,
     lfan_charged_texture: GodotString,
     fan_offset: f64,
+    fan_max_size: f64,
+    fan_min_size: f64,
 
     walk_speed: f64,
 }
@@ -69,6 +71,8 @@ impl Cfg {
     const UPPER_FAN_CHARGED_TEX_PATH: &'static str = "res://ufan_charged.tres";
     const LOWER_FAN_CHARGED_TEX_PATH: &'static str = "res://lfan_charged.tres";
     const FAN_OFFSET: f64 = 50.;
+    const FAN_MAX_SIZE: f64 = 100.;
+    const FAN_MIN_SIZE: f64 = 50.;
 
     const WALK_SPEED: f64 = 20.;
 }
@@ -95,6 +99,8 @@ impl Default for Cfg {
             ufan_charged_texture: Self::UPPER_FAN_CHARGED_TEX_PATH.into(),
             lfan_charged_texture: Self::LOWER_FAN_CHARGED_TEX_PATH.into(),
             fan_offset: Self::FAN_OFFSET,
+            fan_max_size: Self::FAN_MAX_SIZE,
+            fan_min_size: Self::FAN_MIN_SIZE,
 
             walk_speed: Self::WALK_SPEED,
         }
@@ -273,6 +279,26 @@ impl EditorCfg for Cfg {
             hint: PropertyHint::None,
             getter: move |this: &T| get(this).lfan_charged_texture.new_ref(),
             setter: move |this: &mut T, path: GodotString| get_mut(this).lfan_charged_texture = path,
+            usage: *systems::DEFAULT_USAGE,
+        });
+        let get = get_proto.clone();
+        let get_mut = get_mut_proto.clone();
+        builder.add_property(Property {
+            name: "aim/fan_max_size",
+            default: Self::FAN_MAX_SIZE,
+            hint: PropertyHint::None,
+            getter: move |this: &T| get(this).fan_max_size,
+            setter: move |this: &mut T, max| get_mut(this).fan_max_size = max,
+            usage: *systems::DEFAULT_USAGE,
+        });
+        let get = get_proto.clone();
+        let get_mut = get_mut_proto.clone();
+        builder.add_property(Property {
+            name: "aim/fan_min_size",
+            default: Self::FAN_MIN_SIZE,
+            hint: PropertyHint::None,
+            getter: move |this: &T| get(this).fan_min_size,
+            setter: move |this: &mut T, min| get_mut(this).fan_min_size = min,
             usage: *systems::DEFAULT_USAGE,
         });
 
@@ -542,7 +568,7 @@ impl System {
             unsafe {
                 // this is in global coords
                 fan.set_global_position(conv::na64_to_g(pos + offset));
-                fan.set_size(gdnative::Vector2::new(dir.norm() as f32, 1.));
+                fan.set_size(gdnative::Vector2::new(dir.norm().min(self.cfg.fan_max_size) as f32, 2.));
                 fan.set_rotation(offset[1].atan2(offset[0]));
             }
         } else {

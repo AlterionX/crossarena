@@ -1,0 +1,55 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://roots/end_scene/end.gdns" type="Script" id=1]
+
+[node name="Root" type="CenterContainer"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 1 )
+wave_path = NodePath("Content/Gratulation")
+scoreboard_path = NodePath("Content/Scoreboard")
+
+[node name="Content" type="VBoxContainer" parent="."]
+margin_left = 412.0
+margin_top = 263.0
+margin_right = 612.0
+margin_bottom = 337.0
+
+[node name="Gratulation" type="Label" parent="Content"]
+margin_right = 200.0
+margin_bottom = 14.0
+rect_min_size = Vector2( 200, 0 )
+
+[node name="Spacer" type="MarginContainer" parent="Content"]
+margin_top = 18.0
+margin_right = 200.0
+margin_bottom = 38.0
+rect_min_size = Vector2( 0, 20 )
+
+[node name="ScoreboardLabel" type="Label" parent="Content"]
+margin_top = 42.0
+margin_right = 200.0
+margin_bottom = 56.0
+size_flags_horizontal = 3
+text = "Scoreboard:"
+
+[node name="Scoreboard" type="GridContainer" parent="Content"]
+margin_top = 60.0
+margin_right = 200.0
+margin_bottom = 74.0
+columns = 2
+
+[node name="PositionLabel" type="Label" parent="Content/Scoreboard"]
+margin_right = 98.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+text = "Rank"
+align = 1
+
+[node name="WaveLabel" type="Label" parent="Content/Scoreboard"]
+margin_left = 102.0
+margin_right = 200.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+text = "Wave"
+align = 1

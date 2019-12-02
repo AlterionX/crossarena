@@ -4,6 +4,7 @@ pub extern crate gdnative as godot;
 mod entity;
 
 mod event_bus;
+mod records;
 
 mod ui;
 
@@ -50,6 +51,7 @@ fn setup_logger() -> Result<(), log::SetLoggerError> {
 fn init(handle: gdnative::init::InitHandle) {
     setup_logger().expect("Logging setup.");
 
+    // Primary scene
     handle.add_class::<entity::Player>();
     handle.add_class::<entity::NormalProjectile>();
     handle.add_class::<entity::ChargedProjectile>();
@@ -62,7 +64,12 @@ fn init(handle: gdnative::init::InitHandle) {
 
     handle.add_class::<ui::HUD>();
 
+    // Other screens
+    handle.add_class::<ui::Start>();
+    handle.add_class::<ui::End>();
+
     handle.add_class::<event_bus::EventBus>();
+    handle.add_class::<records::Records>();
 }
 
 godot_gdnative_init!();

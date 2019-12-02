@@ -80,7 +80,7 @@ impl Wave {
     }
 
     pub(super) fn value(&self) -> u64 {
-        let a = self.wave_num / 2;
+        let a = self.wave_num * 2;
         a + 1
     }
 

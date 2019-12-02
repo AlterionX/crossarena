@@ -22,6 +22,7 @@ config/icon="res://icon.png"
 [autoload]
 
 EventBus="*res://roots/event/event_bus.tscn"
+Records="*res://roots/records/records.tscn"
 
 [display]
 

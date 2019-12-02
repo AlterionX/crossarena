@@ -46,8 +46,10 @@ gradient = SubResource( 9 )
 
 [node name="Player" type="KinematicBody2D"]
 script = ExtResource( 1 )
+aim/aim_from_nothing = 2000
 aim/projectile_scene = "res://projectile/normal/projectile.tscn"
 aim/charged_projectile_scene = "res://projectile/charged/charged_projectile.tscn"
+aim/bad_aim_offset = 0.755
 aim/upper_fan = NodePath("Aim/AimBeam_R")
 aim/lower_fan = NodePath("Aim/AimBeam_L")
 aim/ufan_normal = "res://player/right_aim_beam_normal.tres"
@@ -74,6 +76,7 @@ collision_layer = 3
 collision_mask = 3
 script = ExtResource( 3 )
 next_attack = 2
+damage = 100.0
 targets = PoolStringArray( "enemy", "switch" )
 
 [node name="TextureRect" type="TextureRect" parent="Melee/1"]
@@ -93,6 +96,7 @@ visible = false
 collision_layer = 3
 collision_mask = 3
 script = ExtResource( 3 )
+damage = 50.0
 cooldown = 2000
 targets = PoolStringArray( "enemy", "switch" )
 
@@ -114,6 +118,7 @@ collision_layer = 3
 collision_mask = 3
 script = ExtResource( 3 )
 next_attack = 1
+damage = 20.0
 targets = PoolStringArray( "enemy", "switch" )
 
 [node name="TextureRect" type="TextureRect" parent="Melee/0"]

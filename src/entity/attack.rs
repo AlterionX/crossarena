@@ -3,6 +3,7 @@ use gdnative::{
     GodotString,
     NativeClass,
     Node,
+    NodePath,
     init::{ClassBuilder, Property, PropertyHint},
     user_data::MutexData,
     StringArray,
@@ -29,6 +30,7 @@ struct Cfg {
     hit_duration: Duration,
     cooldown_duration: Duration,
     target: Vec<GodotString>,
+    max_hits: u64,
 }
 
 impl Cfg {
@@ -39,6 +41,7 @@ impl Cfg {
     const DMG: f64 = 10.;
     // TODO switch default to player later.
     const TARGET: &'static [&'static str] = &["enemy"];
+    const MAX_HITS: u64 = 1;
 }
 
 impl Default for Cfg {
@@ -50,6 +53,7 @@ impl Default for Cfg {
             animation_duration: Self::ANIMATION_DURATION,
             dmg: Self::DMG,
             target: Self::TARGET.iter().map(|s| s.into()).collect(),
+            max_hits: Self::MAX_HITS,
         }
     }
 }
@@ -151,6 +155,16 @@ impl EditorCfg for Cfg {
             },
             usage: *systems::DEFAULT_USAGE,
         });
+        let get = get_proto.clone();
+        let get_mut = get_mut_proto.clone();
+        builder.add_property(Property {
+            name: "max_hits",
+            default: Self::MAX_HITS,
+            hint: PropertyHint::None,
+            getter: move |this: &T| get(this).max_hits,
+            setter: move |this: &mut T, max_hits| get_mut(this).max_hits = max_hits,
+            usage: *systems::DEFAULT_USAGE,
+        });
     }
 }
 
@@ -159,6 +173,8 @@ struct Data {
     remaining_cooldown_duration: Duration,
     remaining_animating_duration: Duration,
     remaining_hit_duration: Duration,
+    // TODO make this a hash map
+    hit_counts: Vec<(NodePath, u64)>,
 }
 
 impl Data {
@@ -190,6 +206,17 @@ impl Data {
 
     fn can_hit(&self) -> bool {
         self.remaining_hit_duration != Self::ZERO
+    }
+
+    fn add_hit_count(&mut self, obj: &Node) {
+        let obj_path = unsafe { obj.get_path() };
+        for (path, count) in self.hit_counts.iter_mut() {
+            if *path == obj_path {
+                *count += 1;
+                return;
+            }
+        }
+        self.hit_counts.push((obj_path, 1));
     }
 }
 
@@ -225,6 +252,30 @@ impl Attack {
             .collect()
     }
 
+    fn is_in_target_groups(&self, target: &Node) -> bool {
+        let target_groups = unsafe { target.get_groups() };
+        for body_group in target_groups.iter().flat_map(|s| s.try_to_godot_string()) {
+            for target in &self.cfg.target {
+                if target == &body_group {
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    fn is_hit_less_than_max(&self, target: &Node) -> bool {
+        (|| {
+            let target_path = unsafe { target.get_path() };
+            for (path, hits) in self.data.as_ref()?.hit_counts.iter() {
+                if *path == target_path {
+                    return Some(*hits < self.cfg.max_hits)
+                }
+            }
+            None
+        })().unwrap_or(true)
+    }
+
     fn can_hit(&self, target: &Node) -> bool {
         let data = if let Some(data) = &self.data {
             data
@@ -236,15 +287,7 @@ impl Attack {
             return false;
         }
 
-        let target_groups = unsafe { target.get_groups() };
-        for body_group in target_groups.iter().flat_map(|s| s.try_to_godot_string()) {
-            for target in &self.cfg.target {
-                if target == &body_group {
-                    return true;
-                }
-            }
-        }
-        false
+        self.is_in_target_groups(&target) && self.is_hit_less_than_max(&target)
     }
 }
 
@@ -263,29 +306,30 @@ impl Attack {
     fn _physics_process(&mut self, owner: Area2D, delta: f64) {
         let delta = Duration::from_secs_f64(delta);
 
-        let data = if let Some(data) = self.data.as_ref() {
-            data
+        // Hit
+        let hit = if let Some(data) = self.data.as_ref() {
+            if data.can_hit() {
+                self.get_hit_objects(owner)
+                    .into_iter()
+                    .filter(|obj| self.can_hit(obj))
+                    .collect()
+            } else {
+                vec![]
+            }
         } else {
-            return;
+            vec![]
         };
 
-        // Hit
-        if data.can_hit() {
-            let hit: Vec<_> = self.get_hit_objects(owner)
-                .into_iter()
-                .filter(|obj| self.can_hit(obj))
-                .collect();
-            for obj in hit.clone() {
+        if let Some(data) = self.data.as_mut() {
+            for obj in hit {
+                data.add_hit_count(&obj);
                 HealthSys::call_damage(unsafe { obj.to_object() }, self.cfg.dmg);
             }
-        }
 
-        // Check if attack is completed.
-        if self.data.as_mut().map_or(false, |data| {
             data.step_time(delta);
-            data.is_finished()
-        }) {
-            self.reset(owner)
+            if data.is_finished() {
+                self.reset(owner);
+            }
         }
     }
 }
@@ -299,6 +343,7 @@ impl Attack {
                 remaining_cooldown_duration: self.cfg.cooldown_duration,
                 remaining_animating_duration: self.cfg.animation_duration,
                 remaining_hit_duration: self.cfg.hit_duration,
+                hit_counts: vec![],
             });
             // Orientation is upside down in screen space.
             // [0, pi] -> [2pi, pi] | [pi, 2pi] -> [pi, 0]
@@ -313,6 +358,7 @@ impl Attack {
                 remaining_cooldown_duration: self.cfg.cooldown_duration,
                 remaining_animating_duration: Duration::from_millis(0),
                 remaining_hit_duration: Duration::from_millis(0),
+                hit_counts: vec![],
             });
         }
     }

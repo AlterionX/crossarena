@@ -8,3 +8,5 @@ pub use direction::Direction;
 
 mod groups;
 pub use groups::Group;
+
+pub mod path_ops;

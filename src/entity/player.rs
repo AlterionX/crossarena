@@ -1,6 +1,7 @@
 use nalgebra as na;
 use gdnative::{
     self as godot,
+    init::Signal,
     InputEvent,
     InputEventMouseButton,
     InputEventMouseMotion,
@@ -85,6 +86,11 @@ impl godot::NativeClass for Player {
         AimSys::register_properties(builder, |this| &this.aim, |this| &mut this.aim);
         MeleeSys::register_properties(builder, |this| &this.melee, |this| &mut this.melee);
         HealthSys::register_properties(builder, |this| &this.health, |this| &mut this.health);
+
+        builder.add_signal(Signal {
+            name: "died".into(),
+            args: &[],
+        });
     }
 }
 
@@ -206,11 +212,11 @@ impl Player {
     }
 
     #[export]
-    unsafe fn _ready(&mut self, mut owner: KinematicBody2D) {
+    unsafe fn _ready(&mut self, owner: KinematicBody2D) {
         self.aim.load_cache();
         self.melee.load_cache();
         self.health.init();
-        Group::Player.add_node(unsafe { owner.to_node() });
+        Group::Player.add_node(owner.to_node());
         log::info!("Hello from the player.");
     }
 
@@ -251,5 +257,17 @@ impl Player {
         let mut owner = unsafe { owner.to_object() };
         self.health.broadcast_max_hp(&mut owner);
         self.health.broadcast_hp(&mut owner);
+    }
+
+    #[export]
+    fn damage(&mut self, mut owner: KinematicBody2D, dmg: f64) {
+        self.health.damage(dmg, Some(unsafe { owner.to_object() }));
+        if self.health.is_dead() {
+            // TODO Any other cleanup.
+            unsafe {
+                owner.emit_signal("died".into(), &[]);
+                owner.queue_free();
+            }
+        }
     }
 }
