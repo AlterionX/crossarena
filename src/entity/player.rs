@@ -18,7 +18,7 @@ use crate::{
     systems::{
         EditorCfg,
         health::{System as HealthSys},
-        inventory::Inventory,
+        items::Inventory,
         aim::{System as AimSys},
         dash::{System as DashSys},
         melee::{System as MeleeSys},
@@ -39,7 +39,7 @@ pub struct Player {
     health: HealthSys,
 
     // inventory
-    inventory: Inventory,
+    pub inventory: Inventory,
 }
 
 impl Player {

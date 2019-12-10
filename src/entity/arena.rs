@@ -14,7 +14,7 @@ use gdnative::{
 };
 use std::sync::{Arc, Mutex};
 use tap::TapOptionOps;
-use crate::{util::path_ops, records::{Record, Records}, entity::switch::Switch};
+use crate::{util::path_ops, records::{Record, Records}, entity::{Switch, Forge}};
 
 mod spawn;
 use spawn::{Cfg as SpawnCfg, System as SpawnSystem};
@@ -24,6 +24,7 @@ use wave::*;
 #[derive(Debug)]
 struct Cfg {
     switch: GodotString,
+    forge: GodotString,
     world: NodePath,
     player: NodePath,
     arena_dim: na::Vector2<f64>,
@@ -34,6 +35,7 @@ struct Cfg {
 
 impl Cfg {
     pub const WORLD: &'static str = "World";
+    pub const FORGE: &'static str = "res://forge/forge.tscn";
     pub const SWITCH: &'static str = "res://switch/switch.tscn";
     pub const PLAYER: &'static str = "Player";
     pub const ARENA_DIM: [f64; 2] = [944., 520.];
@@ -46,6 +48,7 @@ impl Default for Cfg {
     fn default() -> Self {
         Self {
             world: NodePath::from_str(Self::WORLD),
+            forge: Self::FORGE.into(),
             switch: Self::SWITCH.into(),
             player: Self::PLAYER.into(),
             arena_dim: na::Vector2::from_column_slice(&Self::ARENA_DIM),
@@ -59,6 +62,7 @@ impl Default for Cfg {
 #[derive(Debug)]
 struct Cache {
     switch_scene: Arc<Mutex<PackedScene>>,
+    forge_scene: Arc<Mutex<PackedScene>>,
 }
 
 impl Cache {
@@ -67,12 +71,17 @@ impl Cache {
         (|| {
             let enemy_scene_path: GodotString = cfg.switch.new_ref();
             let mut loader = ResourceLoader::godot_singleton();
-            let loaded = loader.load(enemy_scene_path, "PackedScene".into(), true)
+            let loaded_switch = loader.load(enemy_scene_path, "PackedScene".into(), true)
                 .tap_none(|| log::info!("Failed to load scene from {:?}.", cfg.switch.to_string()))?;
-            let loaded = loaded.cast()
+            let loaded_switch = loaded_switch.cast()
                 .tap_none(|| log::info!("Failed to cast instanced scene {:?}.", cfg.switch.to_string()))?;
+            let loaded_forge = loader.load(cfg.forge.new_ref(), "PackedScene".into(), true)
+                .tap_none(|| log::info!("Failed to load scene from {:?}.", cfg.forge.to_string()))?;
+            let loaded_forge = loaded_forge.cast()
+                .tap_none(|| log::info!("Failed to cast instanced scene {:?}.", cfg.forge.to_string()))?;
             Some(Self {
-                switch_scene: Arc::new(Mutex::new(loaded)),
+                switch_scene: Arc::new(Mutex::new(loaded_switch)),
+                forge_scene: Arc::new(Mutex::new(loaded_forge)),
             })
         })()
     }
@@ -86,6 +95,7 @@ pub struct Arena {
     cfg: Cfg,
     cache: Option<Cache>,
     spawned_switch_path: Option<NodePath>,
+    spawned_forge_path: Option<NodePath>,
     spawn_sys: SpawnSystem,
     spawn_count: u64,
     wave: Option<Wave>,
@@ -135,6 +145,14 @@ impl godot::NativeClass for Arena {
             usage: default_usage,
         });
         builder.add_property(Property {
+            name: "forge",
+            default: Cfg::FORGE.into(),
+            hint: PropertyHint::None,
+            getter: |this: &Arena| this.cfg.forge.new_ref(),
+            setter: |this: &mut Arena, forge| this.cfg.forge = forge,
+            usage: default_usage,
+        });
+        builder.add_property(Property {
             name: "player",
             default: NodePath::from_str(Cfg::PLAYER),
             hint: PropertyHint::None,
@@ -178,7 +196,25 @@ impl Arena {
     fn setup_next_wave(&mut self, mut owner: Node) {
         (|| {
             let cache = self.cache.as_ref()?;
-            let mut instance = unsafe {
+
+            let mut forge_instance = unsafe {
+                cache.forge_scene
+                    .lock().ok()
+                    .tap_none(|| log::warn!("Could not load forge scene."))?
+                    .instance(PackedScene::GEN_EDIT_STATE_INSTANCE)
+                    .tap_none(|| log::warn!("Could not instance forge scene."))?
+                    .cast()
+                    .tap_none(|| log::warn!("Could not cast instance forge to StaticBody2D."))?
+            };
+            Forge::call_instance_init(forge_instance, unsafe { owner.get_path() });
+            unsafe {
+                owner.add_child(Some(forge_instance.to_node()), false);
+                forge_instance.set_global_position(gdnative::Vector2::new(256., 300.));
+                let path = forge_instance.get_path();
+                self.spawned_forge_path = Some(path);
+            }
+
+            let mut switch_instance = unsafe {
                 cache.switch_scene
                     .lock().ok()
                     .tap_none(|| log::warn!("Could not load switch scene."))?
@@ -187,11 +223,11 @@ impl Arena {
                     .cast()
                     .tap_none(|| log::warn!("Could not cast instance switch to StaticBody2D."))?
             };
-            Switch::call_instance_init(instance, unsafe { owner.get_path() }, "spawn_next_wave".into());
+            Switch::call_instance_init(switch_instance, unsafe { owner.get_path() }, "spawn_next_wave".into());
             unsafe {
-                owner.add_child(Some(instance.to_node()), false);
-                instance.set_global_position(gdnative::Vector2::new(512., 300.));
-                let path = instance.get_path();
+                owner.add_child(Some(switch_instance.to_node()), false);
+                switch_instance.set_global_position(gdnative::Vector2::new(512., 300.));
+                let path = switch_instance.get_path();
                 self.spawned_switch_path = Some(path);
             }
             Some(())
@@ -227,8 +263,18 @@ impl Arena {
     }
 
     #[export]
-    fn remove_spawn(&mut self, owner: Node, _removing: Object) {
+    fn remove_spawn(&mut self, owner: Node, removing: Object) {
         self.spawn_count -= 1;
+        if let Some(enemy_obj) = unsafe { removing.cast() } {
+            let drops = Instance::<crate::entity::enemy::SimpleEnemy>::try_from_base(enemy_obj)
+                .map(|inst| inst.map_mut(|enemy, _| enemy.get_drops(self.wave.as_ref().map_or(1, |w| w.num()))));
+            if let Some(player) = unsafe { owner.get_node(self.cfg.player.new_ref()) }.and_then(|n| unsafe { n.cast() }) {
+                if let Some(Ok(drops)) = drops {
+                    Instance::<crate::entity::player::Player>::try_from_base(player)
+                        .map(|player| player.map_mut(|player, _| player.inventory.attempt_add(drops)));
+                }
+            }
+        }
         if self.spawn_count == 0 {
             self.setup_next_wave(owner);
         }
@@ -236,6 +282,13 @@ impl Arena {
 
     #[export]
     fn spawn_next_wave(&mut self, mut owner: Node) {
+        if let Some(path) = self.spawned_forge_path.take() {
+            unsafe {
+                owner
+                    .get_node(path.new_ref())
+                    .map(|mut n| n.queue_free());
+            };
+        }
         if let Some(path) = self.spawned_switch_path.take() {
             unsafe {
                 owner

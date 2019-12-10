@@ -15,6 +15,7 @@ use crate::{
     systems::{
         EditorCfg,
         health::{System as HealthSys, Cfg as HealthCfg},
+        items,
     },
 };
 
@@ -49,6 +50,11 @@ impl Cfg {
             owner.call("set_target".into(), &[target.to_variant()]);
         }
     }
+    pub fn call_set_drop_table(mut owner: Node, drop_table: items::DropTable) {
+        unsafe {
+            owner.call("set_drops".into(), &[drop_table.to_variant()]);
+        }
+    }
 }
 
 #[derive(Default, Debug)]
@@ -58,6 +64,7 @@ pub struct Data {
 #[derive(Default, Debug)]
 pub struct State {
     target: Option<NodePath>,
+    drop_table: Option<items::DropTable>,
 }
 
 #[derive(Default, Debug)]
@@ -169,5 +176,17 @@ impl SimpleEnemy {
     #[export]
     fn get_cfg(&mut self, _: KinematicBody2D) -> Cfg {
         self.cfg.clone()
+    }
+
+    #[export]
+    fn set_drops(&mut self, _: KinematicBody2D, table: items::DropTable) {
+        self.state.drop_table = Some(table)
+    }
+
+    pub fn get_drops(&self, wave: u64) -> Vec<items::Stack> {
+        self.state.drop_table
+            .as_ref()
+            .map(|table| table.generate_drops(wave))
+            .unwrap_or(vec![])
     }
 }

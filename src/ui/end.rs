@@ -1,6 +1,7 @@
 use gdnative::{
     Control,
     Container,
+    GodotString,
     init::{ClassBuilder, Property, PropertyHint, PropertyUsage},
     Label,
     NativeClass,
@@ -13,11 +14,13 @@ use crate::records::{Record, Records};
 pub struct End {
     wave: NodePath,
     scoreboard: NodePath,
+    game_scene: GodotString,
 }
 
 impl End {
     const WAVE_PATH: &'static str = "";
     const SCOREBOARD_PATH: &'static str = "";
+    const GAME_SCENE: &'static str = "";
 }
 
 impl Default for End {
@@ -25,6 +28,7 @@ impl Default for End {
         Self {
             wave: Self::WAVE_PATH.into(),
             scoreboard: Self::SCOREBOARD_PATH.into(),
+            game_scene: Self::GAME_SCENE.into(),
         }
     }
 }
@@ -56,6 +60,14 @@ impl NativeClass for End {
             hint: PropertyHint::None,
             getter: |this: &Self| this.scoreboard.new_ref(),
             setter: |this: &mut Self, path| this.scoreboard = path,
+            usage: PropertyUsage::DEFAULT,
+        });
+        builder.add_property(Property {
+            name: "game_scene",
+            default: Self::GAME_SCENE.into(),
+            hint: PropertyHint::None,
+            getter: |this: &Self| this.game_scene.new_ref(),
+            setter: |this: &mut Self, path| this.game_scene = path,
             usage: PropertyUsage::DEFAULT,
         });
     }
@@ -128,5 +140,22 @@ impl End {
         }
 
         self.add_records(&owner, sorted_records);
+    }
+
+    #[export]
+    fn new_game(&self, mut owner: Control) {
+        unsafe {
+            if let Some(tree) = owner.get_tree().as_mut() {
+                owner.queue_free();
+                match tree.change_scene(self.game_scene.new_ref()) {
+                    Ok(_) => (),
+                    Err(e) => {
+                        log::error!("Could not switch scene to {}! Error occurred: {:?}.", self.game_scene.to_string(), e);
+                    }
+                }
+            } else {
+                log::error!("Arena does not belong to a scene!");
+            }
+        }
     }
 }

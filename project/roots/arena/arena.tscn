@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=14 format=2]
 
 [ext_resource path="res://roots/arena/arena.gdns" type="Script" id=1]
 [ext_resource path="res://roots/arena/topbotwall.tres" type="Shape2D" id=2]
@@ -20,21 +20,18 @@ colors = PoolColorArray( 0.741176, 0.521569, 0.329412, 1, 0.741176, 0.521569, 0.
 [sub_resource type="GradientTexture" id=4]
 gradient = SubResource( 3 )
 
-[sub_resource type="RectangleShape2D" id=5]
-
-[sub_resource type="Gradient" id=6]
-offsets = PoolRealArray( 0.473054 )
-colors = PoolColorArray( 0, 0.0862745, 1, 1 )
-
-[sub_resource type="GradientTexture" id=7]
-gradient = SubResource( 6 )
-width = 10
-
-[sub_resource type="StyleBoxFlat" id=8]
+[sub_resource type="StyleBoxFlat" id=5]
 bg_color = Color( 1, 0, 0, 1 )
 
-[sub_resource type="StyleBoxFlat" id=9]
+[sub_resource type="StyleBoxFlat" id=6]
 bg_color = Color( 1, 0.435294, 0.435294, 1 )
+
+[sub_resource type="Gradient" id=7]
+offsets = PoolRealArray( 0 )
+colors = PoolColorArray( 0, 0, 0, 0.556863 )
+
+[sub_resource type="GradientTexture" id=8]
+gradient = SubResource( 7 )
 
 [node name="Arena" type="Node"]
 script = ExtResource( 1 )
@@ -108,36 +105,17 @@ shape = ExtResource( 3 )
 
 [node name="Player" parent="World" instance=ExtResource( 4 )]
 position = Vector2( 512, 300 )
-aim/aim_from_nothing = 500
-health/invincibility_on_damage = 1000
-
-[node name="Forge" type="Node2D" parent="World"]
-editor/display_folded = true
-visible = false
-position = Vector2( 100, 300 )
-
-[node name="StaticBody2D" type="StaticBody2D" parent="World/Forge"]
-editor/display_folded = true
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Forge/StaticBody2D"]
-shape = SubResource( 5 )
-
-[node name="TextureRect" type="TextureRect" parent="World/Forge"]
-margin_left = -10.0
-margin_top = -10.0
-margin_right = 10.0
-margin_bottom = 10.0
-texture = SubResource( 7 )
-expand = true
-stretch_mode = 1
+aim/aim_from_nothing = 3000
+aim/bad_aim_offset = 1.5708
+health/invincibility_on_damage = 300
 
 [node name="UI" type="Control" parent="."]
-editor/display_folded = true
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 1
 
 [node name="HUD" type="VBoxContainer" parent="UI"]
+editor/display_folded = true
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource( 5 )
@@ -192,8 +170,8 @@ mouse_filter = 1
 size_flags_horizontal = 3
 size_flags_vertical = 4
 size_flags_stretch_ratio = 2.0
-custom_styles/fg = SubResource( 8 )
-custom_styles/bg = SubResource( 9 )
+custom_styles/fg = SubResource( 5 )
+custom_styles/bg = SubResource( 6 )
 value = 90.0
 
 [node name="Spacer1" type="MarginContainer" parent="UI/HUD/Status"]
@@ -235,6 +213,103 @@ rect_min_size = Vector2( 25, 0 )
 mouse_filter = 1
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.1
+
+[node name="Inventory" type="CenterContainer" parent="UI"]
+pause_mode = 2
+editor/display_folded = true
+visible = false
+
+[node name="TextureRect" type="TextureRect" parent="UI/Inventory"]
+margin_right = 1024.0
+margin_bottom = 600.0
+grow_horizontal = 2
+grow_vertical = 2
+rect_min_size = Vector2( 1024, 600 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = SubResource( 8 )
+expand = true
+stretch_mode = 1
+
+[node name="Content" type="VBoxContainer" parent="UI/Inventory"]
+editor/display_folded = true
+margin_left = 262.0
+margin_top = 141.0
+margin_right = 762.0
+margin_bottom = 459.0
+
+[node name="InventoryName" type="Label" parent="UI/Inventory/Content"]
+margin_right = 500.0
+margin_bottom = 14.0
+text = "Inventory"
+align = 1
+
+[node name="Items" type="GridContainer" parent="UI/Inventory/Content"]
+margin_top = 18.0
+margin_right = 500.0
+margin_bottom = 318.0
+rect_min_size = Vector2( 500, 300 )
+columns = 3
+
+[node name="Crafting" type="CenterContainer" parent="UI"]
+pause_mode = 2
+editor/display_folded = true
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="TextureRect2" type="TextureRect" parent="UI/Crafting"]
+margin_right = 1024.0
+margin_bottom = 600.0
+grow_horizontal = 2
+grow_vertical = 2
+rect_min_size = Vector2( 1024, 600 )
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = SubResource( 8 )
+expand = true
+stretch_mode = 1
+
+[node name="RecipeTable" type="VBoxContainer" parent="UI/Crafting"]
+margin_left = 262.0
+margin_top = 141.0
+margin_right = 762.0
+margin_bottom = 459.0
+
+[node name="Headings" type="HBoxContainer" parent="UI/Crafting/RecipeTable"]
+editor/display_folded = true
+margin_right = 500.0
+margin_bottom = 14.0
+
+[node name="PossibleIcon" type="Label" parent="UI/Crafting/RecipeTable/Headings"]
+margin_right = 98.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.5
+text = "Can make"
+
+[node name="InputLabel" type="Label" parent="UI/Crafting/RecipeTable/Headings"]
+margin_left = 102.0
+margin_right = 298.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+text = "Input"
+
+[node name="OutputLabel" type="Label" parent="UI/Crafting/RecipeTable/Headings"]
+margin_left = 302.0
+margin_right = 500.0
+margin_bottom = 14.0
+size_flags_horizontal = 3
+text = "Output"
+
+[node name="RecipeScroll" type="ScrollContainer" parent="UI/Crafting/RecipeTable"]
+editor/display_folded = true
+margin_top = 18.0
+margin_right = 500.0
+margin_bottom = 318.0
+rect_min_size = Vector2( 500, 300 )
+
+[node name="Recipes" type="VBoxContainer" parent="UI/Crafting/RecipeTable/RecipeScroll"]
 [connection signal="arena_ready" from="." to="World/Player" method="emit_init_signals"]
 [connection signal="wave_num_changed" from="." to="UI/HUD" method="set_wave_num"]
 [connection signal="died" from="World/Player" to="." method="end_game"]

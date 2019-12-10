@@ -8,35 +8,43 @@ anchor_bottom = 1.0
 script = ExtResource( 1 )
 wave_path = NodePath("Content/Gratulation")
 scoreboard_path = NodePath("Content/Scoreboard")
+game_scene = "res://roots/arena/arena.tscn"
 
 [node name="Content" type="VBoxContainer" parent="."]
 margin_left = 412.0
-margin_top = 263.0
+margin_top = 251.0
 margin_right = 612.0
-margin_bottom = 337.0
+margin_bottom = 349.0
 
 [node name="Gratulation" type="Label" parent="Content"]
 margin_right = 200.0
 margin_bottom = 14.0
 rect_min_size = Vector2( 200, 0 )
 
-[node name="Spacer" type="MarginContainer" parent="Content"]
+[node name="RestartButton" type="Button" parent="Content"]
 margin_top = 18.0
 margin_right = 200.0
 margin_bottom = 38.0
+text = "Start a New Game"
+
+[node name="Spacer" type="MarginContainer" parent="Content"]
+margin_top = 42.0
+margin_right = 200.0
+margin_bottom = 62.0
 rect_min_size = Vector2( 0, 20 )
 
 [node name="ScoreboardLabel" type="Label" parent="Content"]
-margin_top = 42.0
+margin_top = 66.0
 margin_right = 200.0
-margin_bottom = 56.0
+margin_bottom = 80.0
 size_flags_horizontal = 3
 text = "Scoreboard:"
 
 [node name="Scoreboard" type="GridContainer" parent="Content"]
-margin_top = 60.0
+editor/display_folded = true
+margin_top = 84.0
 margin_right = 200.0
-margin_bottom = 74.0
+margin_bottom = 98.0
 columns = 2
 
 [node name="PositionLabel" type="Label" parent="Content/Scoreboard"]
@@ -53,3 +61,4 @@ margin_bottom = 14.0
 size_flags_horizontal = 3
 text = "Wave"
 align = 1
+[connection signal="button_up" from="Content/RestartButton" to="." method="new_game"]

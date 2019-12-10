@@ -11,6 +11,8 @@ mod ui;
 mod util;
 mod systems;
 
+mod crafting;
+
 fn setup_logger() -> Result<(), log::SetLoggerError> {
     let log_level = log::LevelFilter::Info;
 
@@ -21,7 +23,7 @@ fn setup_logger() -> Result<(), log::SetLoggerError> {
         .warn(fern::colors::Color::Yellow)
         .error(fern::colors::Color::Red);
 
-    fern::Dispatch::new()
+    let console_logger = fern::Dispatch::new()
         .format(move |out, message, record| {
             let line = record.line().map_or(-1, |l| l as i64);
             out.finish(format_args!(
@@ -33,8 +35,19 @@ fn setup_logger() -> Result<(), log::SetLoggerError> {
                 message
             ))
         })
-        .level(log_level)
-        .chain(std::io::stdout())
+        .chain(std::io::stdout());
+    let godot_logger = fern::Dispatch::new()
+        .format(move |out, message, record| {
+            let line = record.line().map_or(-1, |l| l as i64);
+            out.finish(format_args!(
+                "{}[{}:{}][{}] {}",
+                chrono::Local::now().format("[%Y-%m-%d][%H:%M:%S]"),
+                record.target(),
+                line,
+                record.level(),
+                message
+            ))
+        })
         .chain(fern::Output::call(|message| {
             use log::Level::*;
             let printing_message = message.args();
@@ -43,9 +56,13 @@ fn setup_logger() -> Result<(), log::SetLoggerError> {
                 Warn => godot_warn!("{}", printing_message),
                 Error => godot_error!("{}", printing_message),
             }
-        }))
-        .apply()?;
-    Ok(())
+        }));
+
+    fern::Dispatch::new()
+        .level(log_level)
+        .chain(console_logger)
+        .chain(godot_logger)
+        .apply()
 }
 
 fn init(handle: gdnative::init::InitHandle) {
@@ -61,6 +78,7 @@ fn init(handle: gdnative::init::InitHandle) {
 
     handle.add_class::<entity::Arena>();
     handle.add_class::<entity::Switch>();
+    handle.add_class::<entity::Forge>();
 
     handle.add_class::<ui::HUD>();
 

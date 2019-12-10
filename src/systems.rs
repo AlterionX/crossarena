@@ -6,7 +6,7 @@ pub mod dash;
 
 pub mod health;
 
-pub mod inventory;
+pub mod items;
 
 lazy_static::lazy_static! {
     pub static ref DEFAULT_USAGE: PropertyUsage = PropertyUsage::SCRIPT_VARIABLE | PropertyUsage::STORAGE | PropertyUsage::EDITOR;

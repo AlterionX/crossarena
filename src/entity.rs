@@ -5,6 +5,8 @@ pub use enemy::SimpleEnemy;
 
 mod switch;
 pub use switch::Switch;
+mod forge;
+pub use forge::Forge;
 mod arena;
 pub use arena::Arena;
 

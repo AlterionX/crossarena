@@ -7,18 +7,21 @@ use gdnative::{
     ResourceLoader,
     GodotString,
 };
-use std::{path::Path, io, sync::{Arc, Mutex}};
+use std::{path::Path, fs::File, io, sync::{Arc, Mutex}};
 
 use crate::{
     entity::{
         arena::wave::Wave,
         enemy::Cfg as EnemyCfg
     },
+    systems::items,
+    util::error,
 };
 
 #[derive(Debug)]
 pub(super) struct Data {
     pub scene: Arc<Mutex<PackedScene>>,
+    pub drops: items::DropTable,
     pub cfg: EnemyCfg,
 }
 
@@ -44,10 +47,23 @@ impl Data {
         EnemyCfg::call_get_cfg(sc.instance(PackedScene::GEN_EDIT_STATE_INSTANCE)?)
     }
 
+    fn read_drop_cfg(dir: &Path) -> Result<items::DropTable, error::JsonIOError> {
+        let mut enemy_name = if let Some(file_name) = dir.file_name() {
+            file_name.to_os_string()
+        } else {
+            dir.canonicalize()?.file_name().expect("No `..` paths after canonicalizing.").to_os_string()
+        };
+        enemy_name.push("_drops.json");
+        let enemy_path = dir.join(enemy_name);
+        log::info!("Loading enemy drop table from: {:?}.", enemy_path);
+        Ok(json::from_reader(File::open(enemy_path)?)?)
+    }
+
     pub(super) fn load_from(_: &Cfg, dir: &Path) -> Option<Self> {
         let scene = Self::load_scene(dir).ok()??;
         Some(Self {
             cfg: Self::read_enemy_cfg(scene.new_ref())?,
+            drops: Self::read_drop_cfg(dir).ok()?,
             scene: Arc::new(Mutex::new(scene)),
         })
     }

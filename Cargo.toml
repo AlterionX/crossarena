@@ -43,3 +43,5 @@ version = "*"
 version = "*"
 [dependencies.tap]
 version = "*"
+[dependencies.itertools]
+version = "*"

@@ -27,6 +27,7 @@ impl Spawn {
             if let Some(mut instance) = instance.and_then(|instance| instance.cast::<Node2D>()) {
                 instance.set_global_position(conv::na64_to_g(self.pos));
                 EnemyCfg::call_set_target(instance.to_node(), target);
+                EnemyCfg::call_set_drop_table(instance.to_node(), enemy.drops.clone());
             }
         }
         Ok(instance)
