@@ -79,7 +79,7 @@ out.
 - [x] Simple player
 - [x] WASD movement
 - [x] Dashing
-- [ ] Enemy data
+- [x] Enemy data
 - [x] General health management
 - [x] Enemy spawn
 - [x] Health UI
@@ -92,12 +92,12 @@ out.
 
 Along with the more "stretch" goals.
 
-- [ ] Item data
+- [x] Item data
 - [x] Inventory UI
 - [x] Drops
-- [ ] Crafting data
+- [x] Crafting data
 - [x] Crafting UI
-- [ ] Crafting
+- [x] Crafting
 - [ ] Equipment data
 - [ ] Equipment UI
 - [ ] Equipment
