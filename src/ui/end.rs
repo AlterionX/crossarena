@@ -79,7 +79,7 @@ impl End {
             owner.get_node(self.scoreboard.new_ref()).and_then(|n| n.cast::<Container>())
         };
         if let Some(mut scoreboard) = scoreboard {
-            for (idx, (_, r)) in records.into_iter().enumerate() {
+            for (idx, (_, r)) in records.into_iter().rev().enumerate() {
                 log::info!("Adding record to scoreboard.");
                 unsafe {
                     let mut pos_label = Label::new();

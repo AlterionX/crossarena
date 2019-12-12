@@ -8,6 +8,8 @@ use gdnative::{
     Node,
     Object,
     user_data::MutexData,
+    StringArray,
+    ToVariant,
 };
 use crate::{
     util::{conv, Group},
@@ -21,6 +23,7 @@ use crate::{
 pub struct Cfg {
     velocity: f64,
     max_bounces: u64,
+    target_groups: StringArray,
 }
 
 impl Cfg {
@@ -33,6 +36,7 @@ impl Default for Cfg {
         Self {
             velocity: Self::VELOCITY,
             max_bounces: Self::MAX_BOUNCES,
+            target_groups: StringArray::new(),
         }
     }
 }
@@ -56,6 +60,16 @@ impl EditorCfg for Cfg {
             hint: PropertyHint::None,
             getter: move |this: &T| get(this).velocity,
             setter: move |this: &mut T, vel| get_mut(this).velocity = vel,
+            usage: *systems::DEFAULT_USAGE,
+        });
+        let get = get_proto.clone();
+        let get_mut = get_mut_proto.clone();
+        builder.add_property(Property {
+            name: "target_groups",
+            default: StringArray::new(),
+            hint: PropertyHint::None,
+            getter: move |this: &T| get(this).target_groups.new_ref(),
+            setter: move |this: &mut T, vel| get_mut(this).target_groups = vel,
             usage: *systems::DEFAULT_USAGE,
         });
         let get = get_proto.clone();
@@ -109,8 +123,12 @@ impl Normal {
         if let Some(target) = unsafe { target.cast::<Node>() } {
             log::info!("Projectile collided with {:?}.", unsafe { target.get_name() });
             let groups = unsafe { target.get_groups() };
-            if groups.contains(&(&GodotString::from("enemy")).into()) || groups.contains(&(&GodotString::from("switch")).into()) {
-                HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
+            for target_group in 0..self.cfg.target_groups.len() {
+                let target_group = self.cfg.target_groups.get(target_group);
+                if groups.contains(&target_group.to_variant()) {
+                    HealthSys::call_damage(unsafe { target.to_object() }, self.dmg);
+                    break;
+                }
             }
         }
     }

@@ -1,10 +1,13 @@
-[gd_scene load_steps=14 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://roots/arena/arena.gdns" type="Script" id=1]
 [ext_resource path="res://roots/arena/topbotwall.tres" type="Shape2D" id=2]
 [ext_resource path="res://roots/arena/sidewall.tres" type="Shape2D" id=3]
 [ext_resource path="res://player/player.tscn" type="PackedScene" id=4]
-[ext_resource path="res://roots/arena/HUD.gdns" type="Script" id=5]
+[ext_resource path="res://roots/arena/UI.gdns" type="Script" id=5]
+[ext_resource path="res://roots/arena/HUD.gdns" type="Script" id=6]
+[ext_resource path="res://roots/arena/Inventory.gdns" type="Script" id=7]
+[ext_resource path="res://roots/arena/Crafting.gdns" type="Script" id=8]
 
 [sub_resource type="OpenSimplexNoise" id=1]
 seed = -5
@@ -105,20 +108,24 @@ shape = ExtResource( 3 )
 
 [node name="Player" parent="World" instance=ExtResource( 4 )]
 position = Vector2( 512, 300 )
-aim/aim_from_nothing = 3000
-aim/bad_aim_offset = 1.5708
+aim/bad_aim_offset = 0.753
 health/invincibility_on_damage = 300
 
 [node name="UI" type="Control" parent="."]
+pause_mode = 2
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 1
+script = ExtResource( 5 )
+crafting = NodePath("Crafting")
+inventory = NodePath("Inventory")
 
 [node name="HUD" type="VBoxContainer" parent="UI"]
+pause_mode = 1
 editor/display_folded = true
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource( 5 )
+script = ExtResource( 6 )
 arena = NodePath("../..")
 hp_bar = NodePath("Status/HP/HP")
 wave_display = NodePath("Status/Wave/Counter")
@@ -218,6 +225,9 @@ size_flags_stretch_ratio = 0.1
 pause_mode = 2
 editor/display_folded = true
 visible = false
+script = ExtResource( 7 )
+item_grid = NodePath("Content/Items")
+player = NodePath("../../World/Player")
 
 [node name="TextureRect" type="TextureRect" parent="UI/Inventory"]
 margin_right = 1024.0
@@ -232,7 +242,6 @@ expand = true
 stretch_mode = 1
 
 [node name="Content" type="VBoxContainer" parent="UI/Inventory"]
-editor/display_folded = true
 margin_left = 262.0
 margin_top = 141.0
 margin_right = 762.0
@@ -257,6 +266,12 @@ editor/display_folded = true
 visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
+script = ExtResource( 8 )
+recipe_dir = "res://recipes"
+marking_path = NodePath("RecipeTable/RecipeScroll/Recipes/Status")
+in_path = NodePath("RecipeTable/RecipeScroll/Recipes/Inputs")
+out_path = NodePath("RecipeTable/RecipeScroll/Recipes/Outputs")
+player_path = NodePath("../../World/Player")
 
 [node name="TextureRect2" type="TextureRect" parent="UI/Crafting"]
 margin_right = 1024.0
@@ -277,16 +292,9 @@ margin_right = 762.0
 margin_bottom = 459.0
 
 [node name="Headings" type="HBoxContainer" parent="UI/Crafting/RecipeTable"]
-editor/display_folded = true
 margin_right = 500.0
 margin_bottom = 14.0
-
-[node name="PossibleIcon" type="Label" parent="UI/Crafting/RecipeTable/Headings"]
-margin_right = 98.0
-margin_bottom = 14.0
-size_flags_horizontal = 3
-size_flags_stretch_ratio = 0.5
-text = "Can make"
+rect_min_size = Vector2( 500, 0 )
 
 [node name="InputLabel" type="Label" parent="UI/Crafting/RecipeTable/Headings"]
 margin_left = 102.0
@@ -302,16 +310,36 @@ margin_bottom = 14.0
 size_flags_horizontal = 3
 text = "Output"
 
+[node name="PossibleIcon" type="Label" parent="UI/Crafting/RecipeTable/Headings"]
+margin_right = 98.0
+margin_bottom = 14.0
+size_flags_stretch_ratio = 0.5
+text = "Craft"
+
 [node name="RecipeScroll" type="ScrollContainer" parent="UI/Crafting/RecipeTable"]
-editor/display_folded = true
 margin_top = 18.0
 margin_right = 500.0
 margin_bottom = 318.0
 rect_min_size = Vector2( 500, 300 )
 
-[node name="Recipes" type="VBoxContainer" parent="UI/Crafting/RecipeTable/RecipeScroll"]
+[node name="Recipes" type="HBoxContainer" parent="UI/Crafting/RecipeTable/RecipeScroll"]
+margin_right = 500.0
+size_flags_horizontal = 3
+
+[node name="Inputs" type="VBoxContainer" parent="UI/Crafting/RecipeTable/RecipeScroll/Recipes"]
+size_flags_horizontal = 3
+
+[node name="Outputs" type="VBoxContainer" parent="UI/Crafting/RecipeTable/RecipeScroll/Recipes"]
+margin_left = 4.0
+margin_right = 4.0
+size_flags_horizontal = 3
+
+[node name="Status" type="VBoxContainer" parent="UI/Crafting/RecipeTable/RecipeScroll/Recipes"]
+margin_right = 40.0
+margin_bottom = 40.0
 [connection signal="arena_ready" from="." to="World/Player" method="emit_init_signals"]
 [connection signal="wave_num_changed" from="." to="UI/HUD" method="set_wave_num"]
 [connection signal="died" from="World/Player" to="." method="end_game"]
 [connection signal="hp" from="World/Player" to="UI/HUD" method="set_health"]
 [connection signal="max_hp" from="World/Player" to="UI/HUD" method="set_max_health"]
+[connection signal="resume" from="UI" to="World/Player" method="reset_facing_dir"]

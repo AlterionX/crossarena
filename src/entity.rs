@@ -1,7 +1,7 @@
 mod player;
 pub use player::Player;
 mod enemy;
-pub use enemy::SimpleEnemy;
+pub use enemy::{SimpleEnemy, RangedEnemy};
 
 mod switch;
 pub use switch::Switch;

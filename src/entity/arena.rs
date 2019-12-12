@@ -25,6 +25,7 @@ use wave::*;
 struct Cfg {
     switch: GodotString,
     forge: GodotString,
+    ui: NodePath,
     world: NodePath,
     player: NodePath,
     arena_dim: na::Vector2<f64>,
@@ -35,6 +36,7 @@ struct Cfg {
 
 impl Cfg {
     pub const WORLD: &'static str = "World";
+    pub const UI: &'static str = "UI";
     pub const FORGE: &'static str = "res://forge/forge.tscn";
     pub const SWITCH: &'static str = "res://switch/switch.tscn";
     pub const PLAYER: &'static str = "Player";
@@ -49,6 +51,7 @@ impl Default for Cfg {
         Self {
             world: NodePath::from_str(Self::WORLD),
             forge: Self::FORGE.into(),
+            ui: Self::UI.into(),
             switch: Self::SWITCH.into(),
             player: Self::PLAYER.into(),
             arena_dim: na::Vector2::from_column_slice(&Self::ARENA_DIM),
@@ -145,6 +148,14 @@ impl godot::NativeClass for Arena {
             usage: default_usage,
         });
         builder.add_property(Property {
+            name: "ui",
+            default: NodePath::from(Cfg::UI),
+            hint: PropertyHint::None,
+            getter: |this: &Arena| this.cfg.ui.new_ref(),
+            setter: |this: &mut Arena, ui| this.cfg.ui = ui,
+            usage: default_usage,
+        });
+        builder.add_property(Property {
             name: "forge",
             default: Cfg::FORGE.into(),
             hint: PropertyHint::None,
@@ -195,6 +206,7 @@ impl godot::NativeClass for Arena {
 impl Arena {
     fn setup_next_wave(&mut self, mut owner: Node) {
         (|| {
+            let mut world = unsafe { owner.get_node(self.cfg.world.new_ref())? };
             let cache = self.cache.as_ref()?;
 
             let mut forge_instance = unsafe {
@@ -206,9 +218,11 @@ impl Arena {
                     .cast()
                     .tap_none(|| log::warn!("Could not cast instance forge to StaticBody2D."))?
             };
-            Forge::call_instance_init(forge_instance, unsafe { owner.get_path() });
+            unsafe { owner.get_node(self.cfg.ui.new_ref()) }
+                .tap_none(|| log::error!("Could not located UI node {}.", self.cfg.ui.to_string()))
+                .map(|n| Forge::call_instance_init(forge_instance, n));
             unsafe {
-                owner.add_child(Some(forge_instance.to_node()), false);
+                world.add_child(Some(forge_instance.to_node()), false);
                 forge_instance.set_global_position(gdnative::Vector2::new(256., 300.));
                 let path = forge_instance.get_path();
                 self.spawned_forge_path = Some(path);
@@ -225,7 +239,7 @@ impl Arena {
             };
             Switch::call_instance_init(switch_instance, unsafe { owner.get_path() }, "spawn_next_wave".into());
             unsafe {
-                owner.add_child(Some(switch_instance.to_node()), false);
+                world.add_child(Some(switch_instance.to_node()), false);
                 switch_instance.set_global_position(gdnative::Vector2::new(512., 300.));
                 let path = switch_instance.get_path();
                 self.spawned_switch_path = Some(path);
@@ -270,6 +284,7 @@ impl Arena {
                 .map(|inst| inst.map_mut(|enemy, _| enemy.get_drops(self.wave.as_ref().map_or(1, |w| w.num()))));
             if let Some(player) = unsafe { owner.get_node(self.cfg.player.new_ref()) }.and_then(|n| unsafe { n.cast() }) {
                 if let Some(Ok(drops)) = drops {
+                    log::info!("Handing out drops {:?} to player!", drops);
                     Instance::<crate::entity::player::Player>::try_from_base(player)
                         .map(|player| player.map_mut(|player, _| player.inventory.attempt_add(drops)));
                 }
@@ -312,14 +327,12 @@ impl Arena {
             );
             self.spawn_count = spawns.len() as u64;
             for mut spawn in spawns {
-                let mut arr = VariantArray::new();
-                arr.push(&Variant::from_object(&spawn));
                 unsafe {
                     spawn.connect(
-                        "tree_exited".into(),
+                        "died".into(),
                         Some(owner.to_object()),
                         "remove_spawn".into(),
-                        arr,
+                        VariantArray::new(),
                         1,
                     ).expect("No problems.");
                 }

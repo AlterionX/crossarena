@@ -26,10 +26,11 @@ impl Category {
 #[derive(ToVariant, FromVariant)]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Item {
-    category: Category,
+    pub category: Category,
 
-    name: String,
-    desc: String,
+    pub name: String,
+    pub desc: String,
+    pub can_use: bool,
 }
 
 impl Item {
@@ -39,8 +40,8 @@ impl Item {
 #[derive(ToVariant, FromVariant)]
 #[derive(Debug, Clone)]
 pub struct Drop {
-    item: Item,
-    range: (u64, u64),
+    pub item: Item,
+    pub range: (u64, u64),
 }
 
 impl Drop {
@@ -56,7 +57,7 @@ impl Drop {
 #[derive(Serialize, Deserialize)]
 #[derive(ToVariant, FromVariant)]
 #[derive(Debug, Clone)]
-pub struct DropGroup(Vec<(Drop, f64)>);
+pub struct DropGroup(pub Vec<(Drop, f64)>);
 
 impl DropGroup {
     fn generate_drop(&self, wave: u64) -> Option<Stack> {
@@ -76,7 +77,7 @@ impl DropGroup {
 #[derive(Serialize, Deserialize)]
 #[derive(ToVariant, FromVariant)]
 #[derive(Debug, Clone)]
-pub struct DropTable(Vec<(DropGroup, u64)>);
+pub struct DropTable(pub Vec<(DropGroup, u64)>);
 
 impl DropTable {
     pub fn generate_drops(&self, wave: u64) -> Vec<Stack> {
@@ -96,11 +97,12 @@ pub enum Error {
     NotEnoughItems(Item, u64),
 }
 
+#[derive(Serialize, Deserialize)]
 #[derive(ToVariant, FromVariant)]
 #[derive(Debug, Clone)]
 pub struct Stack {
-    item: Item,
-    count: u64,
+    pub item: Item,
+    pub count: u64,
 }
 
 impl Stack {
@@ -189,7 +191,7 @@ impl Stack {
 #[derive(Default, Debug, Clone)]
 pub struct Inventory {
     max_stacks: usize,
-    stacks: HashMap<Item, Stack>,
+    pub stacks: HashMap<Item, Stack>,
 }
 
 impl Inventory {
@@ -212,7 +214,7 @@ impl Inventory {
         }
     }
 
-    fn count_items(&self, item: &Item) -> u64 {
+    pub fn count_items(&self, item: &Item) -> u64 {
         self.stacks.get(item).map_or(0, |stack| stack.count)
     }
 
@@ -240,5 +242,9 @@ impl Inventory {
             item,
             count: 0,
         })
+    }
+
+    pub fn stacks(&self) -> impl Iterator<Item = &Stack> {
+        self.stacks.iter().map(|(_, s)| s)
     }
 }

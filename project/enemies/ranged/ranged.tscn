@@ -1,0 +1,51 @@
+[gd_scene load_steps=5 format=2]
+
+[ext_resource path="res://enemies/ranged/ranged.gdns" type="Script" id=1]
+[ext_resource path="res://enemies/ranged/ranged_shape.tres" type="Shape2D" id=2]
+
+[sub_resource type="Gradient" id=1]
+offsets = PoolRealArray( 0.748387, 0.754839 )
+colors = PoolColorArray( 0.968627, 1, 0, 1, 1, 0, 0, 1 )
+
+[sub_resource type="GradientTexture" id=2]
+gradient = SubResource( 1 )
+width = 20
+
+[node name="RangedEnemy" type="KinematicBody2D"]
+position = Vector2( -1, -1 )
+collision_layer = 3
+collision_mask = 3
+script = ExtResource( 1 )
+health/max_hp = 10.0
+health/invincibility_on_damage = 100
+aim/aim_from_nothing = 500
+aim/charge_time = 10000000
+aim/projectile_scene = "res://projectile/enemy/projectile.tscn"
+aim/charged_projectile_scene = "res://projectile/enemy/projectile.tscn"
+aim/dmg = 25.0
+aim/bad_aim_offset = 0.5
+aim/upper_fan = NodePath("TextureRect2")
+aim/lower_fan = NodePath("TextureRect3")
+aim/ufan_normal = "res://enemies/ranged/invisible.tres"
+aim/lfan_normal = "res://enemies/ranged/invisible.tres"
+aim/ufan_charged = "res://enemies/ranged/invisible.tres"
+aim/lfan_Charged = "res://enemies/ranged/invisible.tres"
+
+[node name="TextureRect" type="TextureRect" parent="."]
+margin_left = -10.0
+margin_top = -10.0
+margin_right = 10.0
+margin_bottom = 10.0
+texture = SubResource( 2 )
+stretch_mode = 1
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = ExtResource( 2 )
+
+[node name="TextureRect2" type="TextureRect" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="TextureRect3" type="TextureRect" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0

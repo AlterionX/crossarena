@@ -1,13 +1,17 @@
 use gdnative::{
     self as godot,
     GodotString,
-    init::{Property, PropertyHint, ClassBuilder,},
+    init::{Property, PropertyHint, ClassBuilder, Signal,},
+    Instance,
     StaticBody2D,
     NativeClass,
+    Node,
     NodePath,
     user_data::MutexData,
     Variant,
+    ToVariant,
 };
+use tap::TapResultOps;
 use crate::{util::Group, systems::{self, EditorCfg,}};
 
 pub struct Cfg {
@@ -69,14 +73,18 @@ impl godot::NativeClass for Forge {
 
     fn register_properties(builder: &ClassBuilder<Self>) {
         Cfg::register_properties(builder, |this| &this.cfg, |this| &mut this.cfg);
+        builder.add_signal(Signal {
+            name: "to_forge".into(),
+            args: &[],
+        })
     }
 }
 
 #[methods]
 impl Forge {
     #[export]
-    fn instance_init(&mut self, _owner: StaticBody2D, crafting_ui: NodePath) {
-        self.cfg.crafting_ui = crafting_ui;
+    fn instance_init(&mut self, owner: StaticBody2D, ui_node: Node) {
+        self.cfg.crafting_ui = unsafe { ui_node.get_path() };
     }
 
     #[export]
@@ -87,8 +95,17 @@ impl Forge {
 
     #[export]
     fn switch(&self, owner: StaticBody2D) {
-        log::info!("Forge {:?} was hit!", unsafe { owner.get_name() }.to_string());
+        log::info!("Forge was hit!");
         // TODO pause game and open crafting menu.
+        unsafe {
+            owner.to_node().emit_signal("to_forge".into(), &[]);
+            if let Some(ui) = owner.get_node(self.cfg.crafting_ui.new_ref()).and_then(|n| n.cast()) {
+                if let Some(instance) = Instance::<crate::ui::UI>::try_from_base(ui) {
+                    instance.map_mut(|ui, base| ui.to_forge(base))
+                        .tap_err(|e| log::error!("Could not transition to forge due to {:?}.", e));
+                }
+            }
+        }
     }
 
     #[export]
@@ -98,13 +115,13 @@ impl Forge {
 }
 
 impl Forge {
-    pub fn call_instance_init(mut switch: StaticBody2D, crafting_ui: NodePath) {
+    pub fn call_instance_init(mut switch: StaticBody2D, ui: Node) {
         let instance_init_method: GodotString = "instance_init".into();
         if unsafe { switch.has_method(instance_init_method.new_ref()) } {
             // TODO random aim based on how long was aimed for.
             unsafe {
                 switch.call(instance_init_method, &[
-                    Variant::from_node_path(&crafting_ui),
+                    ui.to_variant(),
                 ])
             };
         }

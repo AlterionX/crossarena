@@ -170,6 +170,29 @@ impl System {
             |data| data.hp,
         )
     }
+    pub fn heal(&mut self, heal: f64, mut to_notify: Option<Object>) -> f64 {
+        if let Some(data) = self.data.as_mut() {
+            data.hp += heal;
+            if data.hp >= self.cfg.max_hp {
+                data.hp = self.cfg.max_hp;
+            }
+        }
+        if let Some(target) = to_notify.as_mut() {
+            self.broadcast_hp(target);
+        }
+        self.data.as_ref().map_or(
+            0.,
+            |data| data.hp,
+        )
+    }
+    pub fn bump_max(&mut self, increase: f64, mut to_notify: Option<Object>) -> f64 {
+        self.cfg.max_hp += increase;
+        if let Some(target) = to_notify.as_mut() {
+            self.broadcast_max_hp(target);
+        }
+        self.heal(increase, to_notify);
+        self.cfg.max_hp
+    }
 
     pub fn get_max_hp(&self) -> u64 {
         self.cfg.max_hp as u64

@@ -45,3 +45,5 @@ version = "*"
 version = "*"
 [dependencies.itertools]
 version = "*"
+[dependencies.maplit]
+version = "*"

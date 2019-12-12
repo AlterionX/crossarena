@@ -3,10 +3,10 @@ use gdnative::{
     Node,
     NodePath,
     PackedScene,
-    ProjectSettings,
     ResourceLoader,
     GodotString,
 };
+use tap::TapResultOps;
 use std::{path::Path, fs::File, io, sync::{Arc, Mutex}};
 
 use crate::{
@@ -15,7 +15,7 @@ use crate::{
         enemy::Cfg as EnemyCfg
     },
     systems::items,
-    util::error,
+    util::{error, path_ops},
 };
 
 #[derive(Debug)]
@@ -63,7 +63,9 @@ impl Data {
         let scene = Self::load_scene(dir).ok()??;
         Some(Self {
             cfg: Self::read_enemy_cfg(scene.new_ref())?,
-            drops: Self::read_drop_cfg(dir).ok()?,
+            drops: Self::read_drop_cfg(dir)
+                .tap_ok(|drops| log::info!("Loaded drop table {:?} for enemy {:?}.", drops, dir))
+                .ok()?,
             scene: Arc::new(Mutex::new(scene)),
         })
     }
@@ -94,10 +96,7 @@ impl Default for Cfg {
 
 impl Cfg {
     fn globalize_path(&mut self) {
-        let project_settings = ProjectSettings::godot_singleton();
-        // Convert to system path.
-        let sys_path = (&self.dir).into();
-        self.dir = project_settings.globalize_path(sys_path).to_string();
+        self.dir = path_ops::abs_asset(self.dir.clone());
     }
 }
 

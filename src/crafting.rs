@@ -1,12 +1,38 @@
+use serde::{Serialize, Deserialize};
+use gdnative::{ToVariant, FromVariant};
 use std::collections::HashMap;
 use itertools::{Itertools, Either};
 
 use crate::systems::items;
 
+#[derive(ToVariant, FromVariant)]
+pub struct RecipeVariant {
+    input: Vec<(items::Item, u64)>,
+    output: Vec<items::Stack>,
+}
+
+impl From<RecipeVariant> for Recipes {
+    fn from(r: RecipeVariant) -> Self {
+        Self {
+            input: r.input.into_iter().collect(),
+            output: r.output,
+        }
+    }
+}
+impl From<Recipes> for RecipeVariant {
+    fn from(r: Recipes) -> Self {
+        Self {
+            input: r.input.into_iter().collect(),
+            output: r.output,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 #[derive(Debug, Clone)]
 pub struct Recipes {
-    input: HashMap<items::Item, u64>,
-    output: Vec<items::Stack>,
+    pub input: HashMap<items::Item, u64>,
+    pub output: Vec<items::Stack>,
 }
 
 #[derive(Debug, Clone)]

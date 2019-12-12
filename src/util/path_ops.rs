@@ -1,4 +1,4 @@
-use gdnative::{Node, NodePath};
+use gdnative::{Node, NodePath, ProjectSettings};
 use tap::TapOptionOps;
 
 pub fn to_abs_if_exist(target: NodePath, root: &Node) -> Option<NodePath> {
@@ -13,4 +13,11 @@ pub fn to_abs_if_exist(target: NodePath, root: &Node) -> Option<NodePath> {
                 )
             )
     }
+}
+
+// Convert to system path.
+pub fn abs_asset(path: String) -> String {
+    let project_settings = ProjectSettings::godot_singleton();
+    // Convert to system path.
+    project_settings.globalize_path(path.into()).to_string()
 }

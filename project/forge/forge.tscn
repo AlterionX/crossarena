@@ -2,18 +2,20 @@
 
 [ext_resource path="res://forge/forge.gdns" type="Script" id=1]
 
-[sub_resource type="Gradient" id=2]
+[sub_resource type="Gradient" id=1]
 offsets = PoolRealArray( 0.473054 )
 colors = PoolColorArray( 0, 0.0862745, 1, 1 )
 
-[sub_resource type="GradientTexture" id=3]
-gradient = SubResource( 2 )
+[sub_resource type="GradientTexture" id=2]
+gradient = SubResource( 1 )
 width = 10
 
-[sub_resource type="RectangleShape2D" id=1]
+[sub_resource type="RectangleShape2D" id=3]
 
 [node name="Forge" type="StaticBody2D"]
 position = Vector2( 100, 300 )
+collision_layer = 3
+collision_mask = 3
 script = ExtResource( 1 )
 
 [node name="TextureRect" type="TextureRect" parent="."]
@@ -21,9 +23,9 @@ margin_left = -10.0
 margin_top = -10.0
 margin_right = 10.0
 margin_bottom = 10.0
-texture = SubResource( 3 )
+texture = SubResource( 2 )
 expand = true
 stretch_mode = 1
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource( 1 )
+shape = SubResource( 3 )

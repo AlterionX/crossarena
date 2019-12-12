@@ -9,6 +9,7 @@ use gdnative::{
     KinematicBody2D,
 };
 use std::time::Duration;
+use tap::TapResultOps;
 use crate::{
     util::{
         Direction,
@@ -22,7 +23,9 @@ use crate::{
         aim::{System as AimSys},
         dash::{System as DashSys},
         melee::{System as MeleeSys},
+        items,
     },
+    crafting::{Recipes, RecipeVariant},
 };
 
 pub struct Player {
@@ -217,6 +220,7 @@ impl Player {
         self.melee.load_cache();
         self.health.init();
         Group::Player.add_node(owner.to_node());
+
         log::info!("Hello from the player.");
     }
 
@@ -267,6 +271,41 @@ impl Player {
             unsafe {
                 owner.emit_signal("died".into(), &[]);
                 owner.queue_free();
+            }
+        }
+    }
+
+    #[export]
+    fn reset_facing_dir(&mut self, _owner: KinematicBody2D) {
+        self.facing_dir = Direction::Neutral;
+        log::info!("Reset facing direction.");
+    }
+
+    #[export]
+    fn craft_recipe(&mut self, _owner: KinematicBody2D, recipe: RecipeVariant) {
+        let recipe = Recipes::from(recipe);
+        recipe
+            .attempt_craft(&mut self.inventory)
+            .tap_err(|e| log::error!("Failed to craft recipe {:?} due to {:?}.", recipe, e))
+            .tap_ok(|e| log::info!("Successfully crafted {:?}!", recipe));
+    }
+
+    #[export]
+    fn use_item(&mut self, owner: KinematicBody2D, item: items::Item) {
+        if item.can_use {
+            if let Ok(stack) = self.inventory.attempt_take(item, 1) {
+                log::info!("Using item {:?}.", stack);
+                match stack.item.name.as_str() {
+                    "cheap health potion" => {
+                        self.health.heal(10., Some(unsafe { owner.to_object() }));
+                    },
+                    "health elixir" => {
+                        self.health.bump_max(10., Some(unsafe { owner.to_object() }));
+                    },
+                    _ => {
+                        log::warn!("Item {:?} has no effect!", stack.item);
+                    }
+                }
             }
         }
     }

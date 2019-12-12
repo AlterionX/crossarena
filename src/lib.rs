@@ -75,16 +75,19 @@ fn init(handle: gdnative::init::InitHandle) {
     handle.add_class::<entity::MeleeAttack>();
 
     handle.add_class::<entity::SimpleEnemy>();
+    handle.add_class::<entity::RangedEnemy>();
 
     handle.add_class::<entity::Arena>();
     handle.add_class::<entity::Switch>();
     handle.add_class::<entity::Forge>();
 
+    // Screens
+    handle.add_class::<ui::UI>();
     handle.add_class::<ui::HUD>();
-
-    // Other screens
     handle.add_class::<ui::Start>();
     handle.add_class::<ui::End>();
+    handle.add_class::<ui::Inventory>();
+    handle.add_class::<ui::Crafting>();
 
     handle.add_class::<event_bus::EventBus>();
     handle.add_class::<records::Records>();
