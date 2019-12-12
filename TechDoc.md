@@ -93,10 +93,10 @@ out.
 Along with the more "stretch" goals.
 
 - [ ] Item data
-- [ ] Inventory UI
-- [ ] Drops
+- [x] Inventory UI
+- [x] Drops
 - [ ] Crafting data
-- [ ] Crafting UI
+- [x] Crafting UI
 - [ ] Crafting
 - [ ] Equipment data
 - [ ] Equipment UI
